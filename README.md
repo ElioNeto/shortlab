@@ -144,10 +144,12 @@ ShortLab is free. You only pay for the AI APIs you use — and most have generou
 ## Requirements
 
 - **Docker & Docker Compose**
-- **Google Gemini API Key** ([Free — get it here](https://aistudio.google.com/app/apikey)) — required for all AI features
-- **fal.ai API Key** ([Pay-per-use](https://fal.ai)) — required for AI Shorts (actor generation, video, lip-sync)
+- **Google Gemini** or **OpenRouter API Key** — required for AI features (viral moment detection, titles, scripts)
+- **fal.ai API Key** ([Pay-per-use](https://fal.ai)) — required for AI Shorts only (actor generation, talking head, lip-sync)
 - **ElevenLabs API Key** ([Free tier](https://elevenlabs.io)) — required for voiceover/dubbing
-- **Upload-Post API Key** ([free tier](https://upload-post.com)) — required for direct social posting
+- **Upload-Post API Key** ([Free tier](https://upload-post.com)) — required for social media publishing
+
+> All API keys are optional depending on which features you use. The app runs without any — only the specific features that require each key will be unavailable.
 
 ---
 
