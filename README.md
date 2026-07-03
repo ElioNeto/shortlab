@@ -1,10 +1,10 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-inverted.png">
-  <source media="(prefers-color-scheme: light)" srcset="assets/logo.png">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/logo-inverted.png">
   <img alt="ShortLab" src="assets/logo-inverted.png">
 </picture>
 
-# ShortLab.app
+# ShortLab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
