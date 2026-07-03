@@ -1,3 +1,11 @@
+// TODO: Split this 1500-line component into smaller sub-components:
+// - AnalysisStep
+// - ScriptStep  
+// - ActorStep  
+// - VoiceStep  
+// - VideoStep  
+// - PublishStep
+
 import React, { useState, useEffect } from 'react';
 import { Globe, Sparkles, Download, Copy, Check, ChevronRight, ChevronLeft, Loader2, AlertCircle, Volume2, User, Film, Terminal, ChevronDown, RefreshCw, Zap, Target, TrendingUp, MessageSquare, Eye, Share2, Calendar, Upload } from 'lucide-react';
 import { getApiUrl } from '../config';

@@ -9,6 +9,8 @@ import time
 import httpx
 from typing import Optional
 
+from app_logger import logger
+
 ELEVENLABS_API_BASE = "https://api.elevenlabs.io/v1"
 
 # Supported target languages for dubbing

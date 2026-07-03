@@ -20,7 +20,7 @@ const deobfuscate = (text) => {
   return text;
 };
 
-export default function ResultCard({ clip, index, jobId, uploadPostKey, uploadUserId, geminiApiKey, elevenLabsKey, llmProvider, llmModel, onPlay, onPause }) {
+const ResultCard = React.memo(function ResultCard({ clip, index, jobId, uploadPostKey, uploadUserId, geminiApiKey, elevenLabsKey, llmProvider, llmModel, onPlay, onPause }) {
     const [showModal, setShowModal] = useState(false);
     const [showSubtitleModal, setShowSubtitleModal] = useState(false);
     const videoRef = React.useRef(null);
@@ -700,4 +700,6 @@ export default function ResultCard({ clip, index, jobId, uploadPostKey, uploadUs
 
         </div>
     );
-}
+};
+
+export default ResultCard;

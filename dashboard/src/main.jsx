@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import Landing from './Landing.jsx'
 import Legal from './Legal.jsx'
+import { ThemeProvider } from './ThemeContext';
 
 function Root() {
   const resolveView = () => {
@@ -34,6 +35,8 @@ function Root() {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Root />
+    <ThemeProvider>
+      <Root />
+    </ThemeProvider>
   </StrictMode>,
 )

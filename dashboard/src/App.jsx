@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileVideo, Sparkles, Youtube, Instagram, Share2, LogOut, ChevronDown, Check, Activity, LayoutDashboard, Settings, PlusCircle, History, Menu, X, Terminal, Shield, LayoutGrid, Image, Globe, RotateCcw, Calendar, AlertTriangle, KeyRound, Bot, Users, Smartphone, ExternalLink, Copy, CheckCircle2 } from 'lucide-react';
+import { Upload, FileVideo, Sparkles, Youtube, Instagram, Share2, LogOut, ChevronDown, Check, Activity, LayoutDashboard, Settings, PlusCircle, History, Menu, X, Terminal, Shield, LayoutGrid, Image, Globe, RotateCcw, Calendar, AlertTriangle, KeyRound, Bot, Users, Smartphone, ExternalLink, Copy, CheckCircle2, Sun, Moon } from 'lucide-react';
 import KeyInput from './components/KeyInput';
 import MediaInput from './components/MediaInput';
 import ResultCard from './components/ResultCard';
@@ -9,6 +9,9 @@ import SaaShortsTab from './components/SaaShortsTab';
 import UGCGallery from './components/UGCGallery';
 import ScheduleWeekModal from './components/ScheduleWeekModal';
 import { getApiUrl } from './config';
+import { useTheme } from './ThemeContext';
+import { t, useTranslation } from './i18n';
+import LanguageSelector from './components/LanguageSelector';
 
 // API Key Storage
 // NOTE: Client-side storage cannot provide true obfuscateion.
@@ -171,6 +174,7 @@ function App() {
 
   const [sessionRecovered, setSessionRecovered] = useState(false);
   const [showScheduleWeek, setShowScheduleWeek] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   // Sync state for original video playback
   const [syncedTime, setSyncedTime] = useState(0);
@@ -452,6 +456,19 @@ function App() {
       </nav>
 
       <div className="p-4 border-t border-white/5 space-y-2">
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 p-3 w-full bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
+        >
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+            {theme === 'dark' ? <Sun size={16} className="text-zinc-400" /> : <Moon size={16} className="text-zinc-400" />}
+          </div>
+          <div className="hidden lg:block overflow-hidden">
+            <p className="text-sm font-bold text-white leading-none mb-0.5">Toggle Theme</p>
+            <p className="text-[10px] text-zinc-400 group-hover:text-zinc-300 transition-colors truncate">{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</p>
+          </div>
+        </button>
+        <LanguageSelector />
         <a
           href="#"
           onClick={(e) => { e.preventDefault(); localStorage.removeItem('shortlab_skip_landing'); window.location.hash = ''; window.location.reload(); }}

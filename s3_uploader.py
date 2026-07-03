@@ -47,6 +47,7 @@ def upload_file_to_s3(file_path, bucket_name, s3_key):
 from botocore.config import Config
 import json
 import time as time_module
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Simple in-memory cache for gallery clips
 _clips_cache = {
@@ -55,6 +56,38 @@ _clips_cache = {
 }
 _cache_lock = threading.Lock()
 CACHE_TTL_SECONDS = 300  # 5 minutes
+
+
+def _batch_get_objects(s3_client, bucket, keys, max_workers=10):
+    """
+    Download multiple S3 objects in parallel using a thread pool.
+
+    Args:
+        s3_client: boto3 S3 client
+        bucket: S3 bucket name
+        keys: List of S3 object keys to fetch
+        max_workers: Maximum parallel threads (default 10)
+
+    Returns:
+        Dict mapping key -> parsed JSON content (empty dict on error per key)
+    """
+    results = {}
+    if not keys:
+        return results
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_map = {
+            executor.submit(s3_client.get_object, Bucket=bucket, Key=k): k
+            for k in keys
+        }
+        for future in as_completed(future_map):
+            key = future_map[future]
+            try:
+                resp = future.result()
+                results[key] = json.loads(resp["Body"].read().decode("utf-8"))
+            except Exception:
+                # Individual failures are logged but don't block other keys
+                pass
+    return results
 
 def get_s3_client():
     """Returns an authenticated S3 client."""
@@ -119,8 +152,6 @@ def list_all_clips(bucket_name=None, limit=50, force_refresh=False):
     
     try:
         # List all objects in bucket
-        # Note: For very large buckets, pagination is needed. 
-        # Assuming reasonable size for now, but adding continuation token support is best practice.
         paginator = s3_client.get_paginator('list_objects_v2')
         pages = paginator.paginate(Bucket=bucket_name)
 
@@ -134,56 +165,48 @@ def list_all_clips(bucket_name=None, limit=50, force_refresh=False):
         # Sort metadata by LastModified (newest first)
         metadata_files.sort(key=lambda x: x['LastModified'], reverse=True)
 
+        # Batch-download all metadata files in parallel (fixes N+1 API problem)
+        meta_keys = [m['Key'] for m in metadata_files]
+        batch_results = _batch_get_objects(s3_client, bucket_name, meta_keys)
+
         for meta_obj in metadata_files:
             key = meta_obj['Key']
-            # key format: {job_id}/..._metadata.json
             
-            # Read metadata content
-            try:
-                obj_resp = s3_client.get_object(Bucket=bucket_name, Key=key)
-                content = obj_resp['Body'].read().decode('utf-8')
-                data = json.loads(content)
-                
-                parts = key.split('/')
-                job_id = parts[0] if len(parts) > 1 else "unknown"
-                # Filename base for clips in same folder
-                # Meta key: "job_id/filename_metadata.json"
-                # Base name in metadata usually matches filename without ext
-                meta_filename = os.path.basename(key) 
-                base_name = meta_filename.replace('_metadata.json', '')
-                
-                clips_data = data.get('shorts', [])
-                
-                for i, clip in enumerate(clips_data):
-                    clip_filename = f"{base_name}_clip_{i+1}.mp4"
-                    clip_key = f"{job_id}/{clip_filename}"
-                    
-                    # Generate signed URL
-                    signed_url = generate_presigned_url(bucket_name, clip_key, expiration=7200) # 2 hours
-                    
-                    if signed_url:
-                        all_clips.append({
-                            "job_id": job_id,
-                            "index": i,
-                            "url": signed_url,
-                            "title": clip.get('video_title_for_youtube_short', 'Untitled Clip'),
-                            "tiktok_desc": clip.get('video_description_for_tiktok', ''),
-                            "insta_desc": clip.get('video_description_for_instagram', ''),
-                            "created_at": meta_obj['LastModified'].isoformat(),
-                            "duration": clip.get('end', 0) - clip.get('start', 0)
-                        })
-                        
-                        # Early exit if we have enough clips
-                        if limit and len(all_clips) >= limit:
-                            break
-                
-                # Early exit if we have enough clips
-                if limit and len(all_clips) >= limit:
-                    break
-
-            except Exception as e:
-                logger.error(f"Error processing metadata {key}: {e}")
+            data = batch_results.get(key)
+            if data is None:
                 continue
+            
+            parts = key.split('/')
+            job_id = parts[0] if len(parts) > 1 else "unknown"
+            meta_filename = os.path.basename(key) 
+            base_name = meta_filename.replace('_metadata.json', '')
+            
+            clips_data = data.get('shorts', [])
+            
+            for i, clip in enumerate(clips_data):
+                clip_filename = f"{base_name}_clip_{i+1}.mp4"
+                clip_key = f"{job_id}/{clip_filename}"
+                
+                # Generate signed URL
+                signed_url = generate_presigned_url(bucket_name, clip_key, expiration=7200)
+                
+                if signed_url:
+                    all_clips.append({
+                        "job_id": job_id,
+                        "index": i,
+                        "url": signed_url,
+                        "title": clip.get('video_title_for_youtube_short', 'Untitled Clip'),
+                        "tiktok_desc": clip.get('video_description_for_tiktok', ''),
+                        "insta_desc": clip.get('video_description_for_instagram', ''),
+                        "created_at": meta_obj['LastModified'].isoformat(),
+                        "duration": clip.get('end', 0) - clip.get('start', 0)
+                    })
+                    
+                    if limit and len(all_clips) >= limit:
+                        break
+            
+            if limit and len(all_clips) >= limit:
+                break
 
     except Exception as e:
         logger.error(f"Error listing bucket: {e}")
@@ -277,6 +300,14 @@ def list_actor_gallery():
                     all_objects[base]['meta_key'] = key
 
         images = []
+        # Batch-fetch metadata JSON files in parallel
+        meta_keys_to_fetch = [
+            data['meta_key']
+            for base, data in all_objects.items()
+            if 'image' in data and 'meta_key' in data
+        ]
+        meta_batch = _batch_get_objects(s3_client, bucket_name, meta_keys_to_fetch) if meta_keys_to_fetch else {}
+
         for base, data in all_objects.items():
             if 'image' not in data:
                 continue
@@ -289,14 +320,10 @@ def list_actor_gallery():
                 "created_at": obj['LastModified'].isoformat(),
                 "description": "",
             }
-            # Try to read metadata JSON
             if 'meta_key' in data:
-                try:
-                    meta_resp = s3_client.get_object(Bucket=bucket_name, Key=data['meta_key'])
-                    meta = json.loads(meta_resp['Body'].read().decode('utf-8'))
+                meta = meta_batch.get(data['meta_key'])
+                if meta:
                     entry['description'] = meta.get('description', '')
-                except Exception:
-                    pass
             images.append(entry)
 
         images.sort(key=lambda x: x['created_at'], reverse=True)
@@ -411,17 +438,17 @@ def list_video_gallery(limit=50, force_refresh=False):
         # Newest first
         meta_files.sort(key=lambda x: x['LastModified'], reverse=True)
 
+        # Batch-download all metadata files in parallel (fixes N+1 API problem)
+        meta_keys = [m['Key'] for m in meta_files]
+        batch_results = _batch_get_objects(s3_client, bucket_name, meta_keys)
+
         for meta_obj in meta_files:
-            try:
-                obj_resp = s3_client.get_object(Bucket=bucket_name, Key=meta_obj['Key'])
-                content = obj_resp['Body'].read().decode('utf-8')
-                data = json.loads(content)
-                videos.append(data)
-                if limit and len(videos) >= limit:
-                    break
-            except Exception as e:
-                logger.error(f"Error reading metadata {meta_obj['Key']}: {e}")
+            data = batch_results.get(meta_obj['Key'])
+            if data is None:
                 continue
+            videos.append(data)
+            if limit and len(videos) >= limit:
+                break
 
     except Exception as e:
         logger.error(f"Failed to list video gallery: {e}")

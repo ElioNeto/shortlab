@@ -2,6 +2,8 @@ import os
 import re
 import subprocess
 
+from app_logger import logger
+
 # Singleton WhisperModel instance
 _whisper_model = None
 
@@ -234,7 +236,7 @@ def burn_subtitles(video_path, srt_path, output_path, alignment=2, fontsize=16,
     result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
     if result.returncode != 0:
-        print(f"❌ FFmpeg Subtitle Error: {result.stderr.decode()}")
+        logger.error(f"FFmpeg Subtitle Error: {result.stderr.decode()}")
         raise Exception(f"FFmpeg failed: {result.stderr.decode()}")
 
     return True

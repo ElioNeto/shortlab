@@ -1,4 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
+// TODO: Split this 1156-line component into smaller sub-components:
+// - VideoUpload
+// - TitleGeneration
+// - ThumbnailDesign
+// - DescriptionGeneration
+// - PublishStep
+
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Image, Loader2, Send, Check, Download, ArrowRight, ArrowLeft, Sparkles, Video, Type, X, Plus, MessageSquare, FileText, Youtube, AlertCircle, CheckCircle2, Settings } from 'lucide-react';
 import { getApiUrl } from '../config';
 
@@ -32,7 +39,19 @@ function StepIndicator({ currentStep }) {
 
 function DragDropZone({ label, accept, onFile, file, onClear, icon: Icon }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (file) {
+      // Revoke previous blob URL to prevent memory leak
+      if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+      setThumbnailPreviewUrl(URL.createObjectURL(file));
+    }
+    return () => {
+      if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+    };
+  }, [file]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -51,7 +70,7 @@ function DragDropZone({ label, accept, onFile, file, onClear, icon: Icon }) {
       <div className="relative border border-white/10 rounded-xl p-3 bg-white/5">
         <div className="flex items-center gap-3">
           {file.type?.startsWith('image/') ? (
-            <img src={URL.createObjectURL(file)} className="w-12 h-12 rounded-lg object-cover" alt="" />
+            <img src={thumbnailPreviewUrl} className="w-12 h-12 rounded-lg object-cover" alt="" />
           ) : (
             <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
               <Icon size={20} className="text-zinc-400" />

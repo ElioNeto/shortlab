@@ -4,6 +4,8 @@ import re
 import subprocess
 import time
 
+from app_logger import logger
+
 
 class VideoEditor:
     def __init__(self, api_key, provider="gemini", model=None, openrouter_base_url=None):
@@ -107,7 +109,7 @@ class VideoEditor:
             from llm import parse_json_response
             return parse_json_response(response_text)
         except Exception:
-            print(f"❌ Failed to parse JSON: {response_text}")
+            logger.error(f"Failed to parse JSON: {response_text[:500]}")
             return None
 
     def get_effects_config(self, video_file_obj, duration, fps=30, width=None, height=None, transcript=None):
@@ -180,7 +182,7 @@ class VideoEditor:
             from llm import parse_json_response
             return parse_json_response(response_text)
         except Exception:
-            print(f"❌ Failed to parse effects config JSON: {response_text}")
+            logger.error(f"Failed to parse effects config JSON: {response_text[:500]}")
             return None
 
     @staticmethod
@@ -237,7 +239,7 @@ class VideoEditor:
         ]
         for pattern in dangerous_patterns:
             if re.search(pattern, s, re.IGNORECASE):
-                print(f"⚠️ Blocked dangerous filter pattern: {pattern}")
+                logger.warning(f"Blocked dangerous filter pattern: {pattern}")
                 s = re.sub(pattern, '', s, flags=re.IGNORECASE)
 
         # Order matters: handle >= / <= before > / <
@@ -256,7 +258,7 @@ class VideoEditor:
         """Executes FFmpeg with the generated filter."""
         
         if not filter_data or "filter_string" not in filter_data:
-            print("⚠️ No filter string found. Copying original.")
+            logger.warning("No filter string found. Copying original.")
             subprocess.run(['ffmpeg', '-y', '-i', input_path, '-c', 'copy', output_path])
             return
 

@@ -4,6 +4,8 @@ import subprocess
 import urllib.request
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
+from app_logger import logger
+
 FONT_URL = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSerif/NotoSerif-Bold.ttf"
 FONT_DIR = "fonts"
 FONT_PATH = os.path.join(FONT_DIR, "NotoSerif-Bold.ttf")
@@ -24,7 +26,7 @@ def download_font_if_needed():
                 out_file.write(response.read())
             print("✅ Font downloaded.")
         except Exception as e:
-            print(f"❌ Failed to download font: {e}")
+            logger.error(f"Failed to download font: {e}")
 
 def create_hook_image(text, target_width, output_image_path="hook_overlay.png", font_scale=1.0):
     """
@@ -48,7 +50,7 @@ def create_hook_image(text, target_width, output_image_path="hook_overlay.png", 
     try:
         font = ImageFont.truetype(FONT_PATH, font_size)
     except Exception as e:
-        print(f"⚠️ Warning: Could not load font {FONT_PATH}, using default. Error: {e}")
+        logger.warning(f"Could not load font {FONT_PATH}, using default. Error: {e}")
         font = ImageFont.load_default()
 
     # Wrap text logic (Pixel-based)
@@ -186,7 +188,7 @@ def add_hook_to_video(video_path, text, output_path, position="top", font_scale=
         video_width = int(dims[0])
         video_height = int(dims[1])
     except Exception as e:
-        print(f"⚠️ FFprobe failed: {e}. Assuming 1080x1920")
+        logger.warning(f"FFprobe failed: {e}. Assuming 1080x1920")
         video_width = 1080
         video_height = 1920
         
@@ -230,10 +232,10 @@ def add_hook_to_video(video_path, text, output_path, position="top", font_scale=
         return True
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ FFmpeg Error: {e.stderr.decode() if e.stderr else 'Unknown'}")
+        logger.error(f"FFmpeg Error: {e.stderr.decode() if e.stderr else 'Unknown'}")
         raise e
     except Exception as e:
-        print(f"❌ Hook Gen Error: {e}")
+        logger.error(f"Hook Gen Error: {e}")
         raise e
     finally:
         # Cleanup temp image

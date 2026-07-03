@@ -142,7 +142,13 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, isProcessin
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="subtitle-modal-title"
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
+        >
             <div className="bg-[#121214] border border-white/10 p-6 rounded-2xl w-full max-w-5xl shadow-2xl relative flex flex-col md:flex-row gap-6 max-h-[90vh]">
                 <button
                     onClick={onClose}
@@ -183,7 +189,7 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, isProcessin
 
                 {/* Right: Controls */}
                 <div className="w-full md:w-80 flex flex-col">
-                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0">
+                    <h3 id="subtitle-modal-title" className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0">
                         <Type className="text-primary" /> Auto Subtitles
                     </h3>
 

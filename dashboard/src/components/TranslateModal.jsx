@@ -47,7 +47,13 @@ export default function TranslateModal({ isOpen, onClose, onTranslate, isProcess
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="translate-modal-title"
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
+        >
             <div className="bg-[#121214] border border-white/10 p-6 rounded-2xl w-full max-w-md shadow-2xl relative">
                 <button
                     onClick={onClose}
@@ -62,7 +68,7 @@ export default function TranslateModal({ isOpen, onClose, onTranslate, isProcess
                         <Languages size={20} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-white">Dub Voice</h3>
+                        <h3 id="translate-modal-title" className="text-lg font-bold text-white">Dub Voice</h3>
                         <p className="text-xs text-zinc-500">AI voice translation by ElevenLabs</p>
                     </div>
                 </div>

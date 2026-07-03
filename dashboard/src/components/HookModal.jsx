@@ -47,7 +47,13 @@ export default function HookModal({ isOpen, onClose, onGenerate, isProcessing, v
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="hook-modal-title"
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
+        >
             <div className="bg-[#121214] border border-white/10 p-6 rounded-2xl w-full max-w-4xl shadow-2xl relative flex flex-col md:flex-row gap-6 max-h-[90vh]">
                 <button
                     onClick={onClose}
@@ -91,7 +97,7 @@ export default function HookModal({ isOpen, onClose, onGenerate, isProcessing, v
 
                 {/* Right: Controls */}
                 <div className="w-full md:w-80 flex flex-col">
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <h3 id="hook-modal-title" className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                         <Sparkles className="text-yellow-400" /> Viral Hook
                     </h3>
 

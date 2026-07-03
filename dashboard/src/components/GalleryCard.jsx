@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Download, Youtube, Instagram, Video, Copy, Check, Play } from 'lucide-react';
 
-export default function GalleryCard({ clip }) {
+const GalleryCard = React.memo(function GalleryCard({ clip }) {
     const [copied, setCopied] = useState(null);
     const [isVisible, setIsVisible] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
@@ -153,4 +153,6 @@ export default function GalleryCard({ clip }) {
             </div>
         </div>
     );
-}
+};
+
+export default GalleryCard;
