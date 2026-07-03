@@ -177,7 +177,7 @@ export default function ScheduleWeekModal({ isOpen, onClose, clips, jobId, uploa
                         <Calendar size={20} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-white">Programar Semana</h3>
+                        <h3 className="text-lg font-bold text-white">Schedule Week</h3>
                         <p className="text-xs text-zinc-500">{clips?.length || 0} clips &middot; 1 por día</p>
                     </div>
                 </div>
@@ -194,7 +194,7 @@ export default function ScheduleWeekModal({ isOpen, onClose, clips, jobId, uploa
                     <div>
                         <label className="block text-xs font-bold text-zinc-400 mb-2 flex items-center gap-2">
                             <Clock size={14} className="text-purple-400" />
-                            Hora
+                            Time
                         </label>
                         <input
                             type="time"
@@ -207,7 +207,7 @@ export default function ScheduleWeekModal({ isOpen, onClose, clips, jobId, uploa
                     <div>
                         <label className="block text-xs font-bold text-zinc-400 mb-2 flex items-center gap-2">
                             <Globe size={14} className="text-indigo-400" />
-                            Zona horaria
+                            Timezone
                         </label>
                         <select
                             value={timezone}
@@ -366,7 +366,7 @@ export default function ScheduleWeekModal({ isOpen, onClose, clips, jobId, uploa
                             ) : (
                                 <>
                                     <Calendar size={16} />
-                                    Programar {clips?.length || 0} Clips
+                                    Schedule {clips?.length || 0} Clips
                                 </>
                             )}
                         </button>

@@ -11,11 +11,14 @@ import asyncio
 from dotenv import load_dotenv
 from typing import Dict, Optional, List
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Header, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Header, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from s3_uploader import upload_job_artifacts, list_all_clips, upload_actor_to_s3, list_actor_gallery, upload_video_to_gallery, list_video_gallery
 
 load_dotenv()
@@ -32,6 +35,31 @@ MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "5"))
 MAX_FILE_SIZE_MB = 2048  # 2GB limit
 JOB_RETENTION_SECONDS = 3600  # 1 hour retention
 DISABLE_YOUTUBE_URL = os.environ.get("DISABLE_YOUTUBE_URL", "false").lower() in ("1", "true", "yes")
+
+# API Key Authentication
+API_AUTH_KEY = os.environ.get("API_AUTH_KEY", "")
+ENABLE_AUTH = bool(API_AUTH_KEY)
+
+async def verify_api_key(x_api_key: Optional[str] = Header(None)):
+    """Dependency to verify API key for protected endpoints."""
+    if not ENABLE_AUTH:
+        return True
+    if not x_api_key or x_api_key != API_AUTH_KEY:
+        raise HTTPException(status_code=403, detail="Invalid or missing API key")
+    return True
+
+# Rate Limiting
+limiter = Limiter(key_func=get_remote_address)
+
+# Simple auth middleware for /api/ routes
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    if ENABLE_AUTH and request.url.path.startswith("/api/") and request.url.path not in ("/api/config", "/api/status", "/health"):
+        api_key = request.headers.get("X-API-Key")
+        if not api_key or api_key != API_AUTH_KEY:
+            return JSONResponse(status_code=403, content={"detail": "Invalid or missing API key"})
+    response = await call_next(request)
+    return response
 
 # Application State
 job_queue = asyncio.Queue()
@@ -196,6 +224,8 @@ async def lifespan(app: FastAPI):
     # Cleanup (optional: cancel worker)
 
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS for frontend - restricted to specific origins
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5175").split(",")
@@ -1262,10 +1292,18 @@ async def thumbnail_upload(
     # Save file if uploaded directly
     video_path = None
     if file:
-        video_path = os.path.join(UPLOAD_DIR, f"thumb_{session_id}_{file.filename}")
+        safe_filename = os.path.basename(file.filename) if file.filename else "upload"
+        video_path = os.path.join(UPLOAD_DIR, f"thumb_{session_id}_{safe_filename}")
+        # Read with size limit
+        limit_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
+        size = 0
         with open(video_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > limit_bytes:
+                    os.remove(video_path)
+                    raise HTTPException(status_code=413, detail=f"File too large. Max size {MAX_FILE_SIZE_MB}MB")
+                buffer.write(chunk)
 
     # Initialize session
     thumbnail_sessions[session_id] = {
@@ -1367,9 +1405,17 @@ async def thumbnail_analyze(
             from main import download_youtube_video
             video_path, _ = download_youtube_video(url, UPLOAD_DIR)
         else:
-            video_path = os.path.join(UPLOAD_DIR, f"thumb_{session_id}_{file.filename}")
+            safe_filename = os.path.basename(file.filename) if file.filename else "upload"
+            video_path = os.path.join(UPLOAD_DIR, f"thumb_{session_id}_{safe_filename}")
+            limit_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
+            size = 0
             with open(video_path, "wb") as buffer:
-                content = await file.read()
+                while chunk := await file.read(1024 * 1024):
+                    size += len(chunk)
+                    if size > limit_bytes:
+                        os.remove(video_path)
+                        raise HTTPException(status_code=413, detail=f"File too large. Max size {MAX_FILE_SIZE_MB}MB")
+                        buffer.write(chunk)
                 buffer.write(content)
 
     try:
@@ -1810,8 +1856,15 @@ async def saasshorts_actor_upload(file: UploadFile = File(...)):
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    try:
-        content = await file.read()
+    # Read with size limit (10MB max for images)
+    max_image_bytes = 10 * 1024 * 1024
+    content = b""
+    size = 0
+    while chunk := await file.read(1024 * 1024):
+        size += len(chunk)
+        if size > max_image_bytes:
+            raise HTTPException(status_code=413, detail="Image too large. Max 10MB")
+        content += chunk
 
         # Validate minimum size
         if len(content) < 1000:
@@ -2207,8 +2260,8 @@ async def saasshorts_generate(
             import httpx
             try:
                 actor_local = os.path.join(job_output_dir, "selected_actor.png")
-                with httpx.Client(timeout=30.0) as client:
-                    resp = client.get(req.selected_actor_url)
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.get(req.selected_actor_url)
                     if resp.status_code == 200:
                         with open(actor_local, "wb") as f:
                             f.write(resp.content)

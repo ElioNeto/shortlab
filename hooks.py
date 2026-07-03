@@ -1,5 +1,5 @@
 import os
-import textwrap
+import uuid
 import subprocess
 import urllib.request
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -194,7 +194,7 @@ def add_hook_to_video(video_path, text, output_path, position="top", font_scale=
     # Box check: Don't let it be wider than 90% of screen
     target_box_width = int(video_width * 0.9)
     
-    hook_filename = f"temp_hook_{os.path.basename(video_path)}.png"
+    hook_filename = f"temp_hook_{uuid.uuid4().hex[:8]}_{os.path.basename(video_path)}.png"
     # Ensure unique or temp location if needed, but relative is fine for this app structure
     
     try:

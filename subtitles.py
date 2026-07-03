@@ -6,11 +6,14 @@ import subprocess
 _whisper_model = None
 
 def _get_whisper_model():
-    """Lazy-load WhisperModel as a singleton to avoid reloading on every call."""
+    """Lazy-load WhisperModel as a singleton. Model name configurable via WHISPER_MODEL env var."""
     global _whisper_model
     if _whisper_model is None:
         from faster_whisper import WhisperModel
-        _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+        model_name = os.environ.get("WHISPER_MODEL", "base")
+        device = os.environ.get("WHISPER_DEVICE", "cpu")
+        compute_type = os.environ.get("WHISPER_COMPUTE_TYPE", "int8")
+        _whisper_model = WhisperModel(model_name, device=device, compute_type=compute_type)
     return _whisper_model
 
 

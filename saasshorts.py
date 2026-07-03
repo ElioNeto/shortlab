@@ -18,6 +18,30 @@ import json
 import time
 import subprocess
 import httpx
+from typing import Optional
+
+# Prompt injection sanitization patterns
+PROMPT_INJECTION_PATTERNS = [
+    r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions|prompts|directions)",
+    r"forget\s+(all\s+)?(previous|above|prior)\s+(instructions|prompts|directions)",
+    r"you\s+(are\s+)?(now|free|can\s+ignore)",
+    r"system\s+prompt",
+    r"<\|im_start\|>",
+    r"<\|im_end\|>",
+    r"\[INST\]",
+    r"\[\/INST\]",
+]
+
+def sanitize_prompt_input(text: str) -> str:
+    """Sanitize user input to prevent prompt injection attacks."""
+    if not text:
+        return ""
+    sanitized = text
+    for pattern in PROMPT_INJECTION_PATTERNS:
+        sanitized = re.sub(pattern, "", sanitized, flags=re.IGNORECASE)
+    if len(sanitized) > 2000:
+        sanitized = sanitized[:2000] + "..."
+    return sanitized.strip()
 from urllib.parse import urljoin
 from typing import Optional, List, Dict, Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -385,7 +409,17 @@ def generate_scripts(
     """Generate video scripts based on SaaS analysis."""
     from llm import LLMClient, parse_json_response
 
-    lang_name = "Spanish" if language == "es" else "English"
+    # Language mapping - use full list from translate.py if available, else fallback
+    LANGUAGE_NAMES = {
+        "en": "English", "es": "Spanish", "pt": "Portuguese", "fr": "French",
+        "de": "German", "it": "Italian", "ja": "Japanese", "ko": "Korean",
+        "zh": "Chinese", "ru": "Russian", "ar": "Arabic", "hi": "Hindi",
+        "nl": "Dutch", "pl": "Polish", "tr": "Turkish", "vi": "Vietnamese",
+        "th": "Thai", "id": "Indonesian", "sv": "Swedish", "da": "Danish",
+        "fi": "Finnish", "no": "Norwegian", "cs": "Czech", "ro": "Romanian",
+        "hu": "Hungarian", "el": "Greek", "he": "Hebrew", "uk": "Ukrainian",
+    }
+    lang_name = LANGUAGE_NAMES.get(language, language)
     print(f"[SaaSShorts] 📝 Generating {num_scripts} scripts ({style}, {lang_name})...")
 
     llm = LLMClient(provider=provider, api_key=gemini_key, model=model or GEMINI_MODEL)
@@ -683,9 +717,9 @@ def generate_actor_images(
     img_num = random.randint(1000, 9999)
 
     if product_description:
-        prompt = f"""IMG_{img_num}.jpg Raw candid selfie of {clean_desc}, casually holding {product_description}, showing it to the camera with a natural smile. Product clearly visible in hand. Casual and real, not an ad. Low quality front camera, soft room lighting. Reddit selfie."""
+        prompt = f"""IMG_{img_num}.jpg Raw candid selfie of {sanitize_prompt_input(clean_desc)}, casually holding {sanitize_prompt_input(product_description)}, showing it to the camera with a natural smile. Product clearly visible in hand. Casual and real, not an ad. Low quality front camera, soft room lighting. Reddit selfie."""
     else:
-        prompt = f"""IMG_{img_num}.jpg Raw candid selfie of {clean_desc}, sitting at their desk at home, looking at camera with a relaxed natural smile. Headphones around neck, monitor glow behind them. Not posed, casual and real. Low quality front camera, soft room lighting. Reddit selfie."""
+        prompt = f"""IMG_{img_num}.jpg Raw candid selfie of {sanitize_prompt_input(clean_desc)}, sitting at their desk at home, looking at camera with a relaxed natural smile. Headphones around neck, monitor glow behind them. Not posed, casual and real. Low quality front camera, soft room lighting. Reddit selfie."""
 
     print(f"[SaaSShorts]   Prompt: {prompt[:120]}...{' (with product)' if product_description else ''}")
 
@@ -1048,7 +1082,10 @@ def transcribe_audio_for_subs(audio_path: str) -> list:
     from faster_whisper import WhisperModel
 
     print(f"[SaaSShorts] 🎙️ Transcribing audio for subtitles...")
-    model = WhisperModel("base", device="cpu", compute_type="int8")
+    whisper_model_name = os.environ.get("WHISPER_MODEL", "base")
+    whisper_device = os.environ.get("WHISPER_DEVICE", "cpu")
+    whisper_compute = os.environ.get("WHISPER_COMPUTE_TYPE", "int8")
+    model = WhisperModel(whisper_model_name, device=whisper_device, compute_type=whisper_compute)
     segments, info = model.transcribe(audio_path, word_timestamps=True)
 
     words = []
