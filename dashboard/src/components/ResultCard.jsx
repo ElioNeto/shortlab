@@ -700,6 +700,6 @@ const ResultCard = React.memo(function ResultCard({ clip, index, jobId, uploadPo
 
         </div>
     );
-};
+});
 
 export default ResultCard;

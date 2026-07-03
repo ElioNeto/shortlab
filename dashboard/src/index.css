@@ -28,7 +28,8 @@
 }
 
 .glass-panel {
-  @apply bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl;
+  @apply backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl;
+  background-color: rgba(24, 24, 27, 0.5);
 }
 
 .input-field {
