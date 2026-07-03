@@ -75,6 +75,21 @@
     }
   },
   "agent": {
+    "god": {
+      "description": "Omnipotent agent with unrestricted access to all tools and permissions",
+      "permission": {
+        "edit": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "bash": "allow",
+        "task": "allow",
+        "external_directory": "allow",
+        "question": "allow",
+        "webfetch": "allow"
+      }
+    },
     "build": {
       "description": "Default agent - full-stack development for ShortLab video platform"
     },
