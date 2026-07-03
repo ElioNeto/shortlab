@@ -1,5 +1,8 @@
 import os
+import threading
+import logging
 from dotenv import load_dotenv
+
 load_dotenv()
 import boto3
 from botocore.exceptions import ClientError
@@ -50,6 +53,7 @@ _clips_cache = {
     "data": None,
     "timestamp": 0
 }
+_cache_lock = threading.Lock()
 CACHE_TTL_SECONDS = 300  # 5 minutes
 
 def get_s3_client():
@@ -96,12 +100,13 @@ def list_all_clips(bucket_name=None, limit=50, force_refresh=False):
     """
     global _clips_cache
     
-    # Check cache first
-    now = time_module.time()
-    if not force_refresh and _clips_cache["data"] is not None:
-        if now - _clips_cache["timestamp"] < CACHE_TTL_SECONDS:
-            cached = _clips_cache["data"]
-            return cached[:limit] if limit else cached
+    # Check cache first (thread-safe)
+    with _cache_lock:
+        now = time_module.time()
+        if not force_refresh and _clips_cache["data"] is not None:
+            if now - _clips_cache["timestamp"] < CACHE_TTL_SECONDS:
+                cached = _clips_cache["data"]
+                return cached[:limit] if limit else cached
     
     if not bucket_name:
         bucket_name = os.environ.get('AWS_S3_BUCKET', 'my-clips-bucket')
@@ -184,9 +189,10 @@ def list_all_clips(bucket_name=None, limit=50, force_refresh=False):
         logger.error(f"Error listing bucket: {e}")
         return []
     
-    # Update cache with full results (keep for pagination later)
-    _clips_cache["data"] = all_clips
-    _clips_cache["timestamp"] = now
+    # Update cache with full results (thread-safe)
+    with _cache_lock:
+        _clips_cache["data"] = all_clips
+        _clips_cache["timestamp"] = now
 
     return all_clips[:limit] if limit else all_clips
 
