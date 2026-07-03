@@ -1,22 +1,17 @@
-# ShortLab.app
+<picture>
+  <img alt="ShortLab" src="assets/logo-inverted.png">
+</picture>
+
+# ShortLab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![GitHub stars](https://img.shields.io/github/stars/mutonby/shortlab?style=social)](https://github.com/mutonby/shortlab)
-[![Last Commit](https://img.shields.io/github/last-commit/mutonby/shortlab)](https://github.com/mutonby/shortlab/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/ElioNeto/shortlab?style=social)](https://github.com/ElioNeto/shortlab)
+[![Last Commit](https://img.shields.io/github/last-commit/ElioNeto/shortlab)](https://github.com/ElioNeto/shortlab/commits/main)
 
 **Free & open source AI video platform** with 3 tools in one: **Clip Generator**, **AI Shorts (UGC videos with AI actors)**, and **YouTube Studio**. Self-hosted with Docker. No watermarks, no limits.
 
-https://github.com/user-attachments/assets/b45fa983-16b4-48b5-ac5b-a267836b9ad9
-
-
-
-### Video Tutorial: How it works
-[![ShortLab Tutorial](https://img.youtube.com/vi/xlyjD1qCaX0/maxresdefault.jpg)](https://www.youtube.com/watch?v=xlyjD1qCaX0 "Click to watch the video on YouTube")
-
-*Click the image above to watch the full walkthrough.*
 
 ---
 
@@ -25,12 +20,8 @@ https://github.com/user-attachments/assets/b45fa983-16b4-48b5-ac5b-a267836b9ad9
 ### 1. Clip Generator
 Turn your long-form videos — podcasts, webinars, livestreams, vlogs, interviews — into viral-ready 9:16 shorts for TikTok, Instagram Reels, and YouTube Shorts.
 
-![Clip Results](screenshots/clip-results.png)
-
 ### 2. AI Shorts (UGC Video Creator)
 Generate marketing videos with AI actors for **any product or business**. No camera, no studio, no influencer budget. Just describe your product or paste a URL.
-
-![AI Shorts Setup](screenshots/ai-shorts.png)
 
 - **Two cost modes**: Low Cost (~$0.65/video) and Premium (~$2/video)
 - Works for any business: SaaS, restaurants, e-commerce, coaching, local businesses
@@ -41,8 +32,6 @@ Generate marketing videos with AI actors for **any product or business**. No cam
 ### 3. YouTube Studio
 Complete free AI YouTube toolkit: thumbnails, titles, descriptions, and direct publishing.
 
-![YouTube Studio](screenshots/youtube-studio.png)
-
 - AI thumbnail generator with face overlay
 - 10 viral title suggestions with refinement chat
 - Auto-generated descriptions with chapter timestamps
@@ -50,8 +39,6 @@ Complete free AI YouTube toolkit: thumbnails, titles, descriptions, and direct p
 
 ### UGC Video Gallery
 All generated videos and avatars are saved to a public gallery with SEO pages for each video.
-
-![UGC Gallery](screenshots/ugc-gallery.png)
 
 - Public gallery page with hover-to-play (`/gallery`)
 - Individual SEO video pages with og:video meta tags (`/video/{id}`)
@@ -110,67 +97,58 @@ All generated videos and avatars are saved to a public gallery with SEO pages fo
 - **Local businesses** — Restaurants, gyms, real estate, coaching — affordable video marketing
 - **Developers** — Self-host, customize the pipeline, integrate via API
 
----
 
-## AI Shorts Showcase
-
-Videos generated with ShortLab AI Shorts — no camera, no studio, no actors:
-
-| | | |
-|:---:|:---:|:---:|
-| [![Biohacking for Investors](https://test-videos-upload-post.s3.eu-west-3.amazonaws.com/videos/cdceec1b/actor.png)](https://shortlab.app/video/cdceec1b) | [![Secret Weapon for Devs](https://test-videos-upload-post.s3.eu-west-3.amazonaws.com/videos/d3a80b6b/actor.png)](https://shortlab.app/video/d3a80b6b) | [![El Secreto de los Agentes de IA](https://test-videos-upload-post.s3.eu-west-3.amazonaws.com/videos/8ab7de92/actor.png)](https://shortlab.app/video/8ab7de92) |
-| **Biohacking for Investors** · LOW COST | **Secret Weapon for Devs** · LOW COST | **El Secreto de los Agentes de IA** · PREMIUM |
-
-> Browse all videos at [shortlab.app/gallery](https://shortlab.app/gallery)
 
 ---
 
 ## ShortLab vs Competitors
 
-| Feature | ShortLab | Opus Clip | CapCut | Vizard | Klap | Descript |
-|---------|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Price** | **Free** | $15-29/mo | $8/mo | $15-20/mo | $23-63/mo | $24-65/mo |
-| **Self-hosted** | **Yes** | No | No | No | No | No |
-| **Open source** | **Yes** | No | No | No | No | No |
-| **Watermark** | **Never** | Free tier | Some | Free tier | Free tier | Free tier |
-| **Upload limits** | **None** | 10-30GB | Credit-based | 60min-10hr | 10-100 vids/mo | 60min-40hr |
-| **AI clip detection** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Smart 9:16 reframing** | Yes | Yes | Yes | Yes | Yes | No |
-| **Auto subtitles** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Voice dubbing (30+ langs)** | Yes | No | Pro only | No | Pro only | Business only |
-| **AI UGC actors** | **Yes** | No | No | No | No | No |
-| **AI video effects** | Yes | No | Yes | No | No | No |
-| **Hook text overlays** | Yes | No | No | No | No | No |
-| **YouTube Studio (titles, thumbnails)** | **Yes** | No | No | No | No | No |
-| **Social auto-publishing** | Yes | Pro only | TikTok only | Paid only | Paid only | No |
-| **Schedule uploads** | Yes | Pro only | No | Paid only | Paid only | No |
-| **Data privacy** | **Your server** | Their cloud | Their cloud | Their cloud | Their cloud | Their cloud |
+| Feature                                 |    ShortLab     |  Opus Clip  |    CapCut    |   Vizard    |      Klap      |   Descript    |
+| --------------------------------------- | :-------------: | :---------: | :----------: | :---------: | :------------: | :-----------: |
+| **Price**                               |    **Free**     |  $15-29/mo  |    $8/mo     |  $15-20/mo  |   $23-63/mo    |   $24-65/mo   |
+| **Self-hosted**                         |     **Yes**     |     No      |      No      |     No      |       No       |      No       |
+| **Open source**                         |     **Yes**     |     No      |      No      |     No      |       No       |      No       |
+| **Watermark**                           |    **Never**    |  Free tier  |     Some     |  Free tier  |   Free tier    |   Free tier   |
+| **Upload limits**                       |    **None**     |   10-30GB   | Credit-based | 60min-10hr  | 10-100 vids/mo |  60min-40hr   |
+| **AI clip detection**                   |       Yes       |     Yes     |     Yes      |     Yes     |      Yes       |      Yes      |
+| **Smart 9:16 reframing**                |       Yes       |     Yes     |     Yes      |     Yes     |      Yes       |      No       |
+| **Auto subtitles**                      |       Yes       |     Yes     |     Yes      |     Yes     |      Yes       |      Yes      |
+| **Voice dubbing (30+ langs)**           |       Yes       |     No      |   Pro only   |     No      |    Pro only    | Business only |
+| **AI UGC actors**                       |     **Yes**     |     No      |      No      |     No      |       No       |      No       |
+| **AI video effects**                    |       Yes       |     No      |     Yes      |     No      |       No       |      No       |
+| **Hook text overlays**                  |       Yes       |     No      |      No      |     No      |       No       |      No       |
+| **YouTube Studio (titles, thumbnails)** |     **Yes**     |     No      |      No      |     No      |       No       |      No       |
+| **Social auto-publishing**              |       Yes       |  Pro only   | TikTok only  |  Paid only  |   Paid only    |      No       |
+| **Schedule uploads**                    |       Yes       |  Pro only   |      No      |  Paid only  |   Paid only    |      No       |
+| **Data privacy**                        | **Your server** | Their cloud | Their cloud  | Their cloud |  Their cloud   |  Their cloud  |
 
 ---
 
 ## How Much Does It Cost?
 
-ShortLab is free. You only pay for the AI APIs you use — and most have generous free tiers:
+ShortLab is free. You only pay for the AI APIs you use — most have free tiers:
 
 | Service | Free Tier | Paid Cost | Used For |
-|---------|-----------|-----------|----------|
-| **Google Gemini** | Free trial with generous limits | < $0.01 per 10-min video | Viral moment detection, script generation, web research |
-| **fal.ai** | Pay-per-use | ~$0.50-1.50 per AI Short | Actor generation, talking head video, lip-sync |
-| **ElevenLabs** | Free tier available | Pay-per-use | Voiceover, voice dubbing |
-| **Upload-Post** | **10 free uploads/month** to all networks (no credit card) | Pay-per-use | Auto-publishing to TikTok, Instagram, YouTube |
-| **AWS S3** | Optional | ~$0.023/GB | Cloud backup for clips and gallery |
+|---|---|---|---|
+| **Gemini / OpenRouter** | Free tier with generous limits | ~$0.01 per 10-min video | Viral moment detection, scripts, titles |
+| **fal.ai** | Pay-per-use | ~$0.50–1.50 per AI Short | Actor, talking head, b-roll |
+| **ElevenLabs** | Free tier available | Pay-per-use | Voiceover, dubbing |
+| **Upload-Post** | 10 free uploads/month | Pay-per-use | Social posting |
+| **AWS S3** | Optional | ~$0.023/GB | Cloud backup |
 
-**Bottom line:** You can clip videos for practically free with Gemini, and publish 10 videos/month to all social networks at zero cost with Upload-Post.
+**Bottom line:** Clip videos for practically free with Gemini/OpenRouter, and publish up to 10 videos/month to all social networks at zero cost with Upload-Post.
 
 ---
 
 ## Requirements
 
 - **Docker & Docker Compose**
-- **Google Gemini API Key** ([Free — get it here](https://aistudio.google.com/app/apikey)) — required for all AI features
-- **fal.ai API Key** ([Pay-per-use](https://fal.ai)) — required for AI Shorts (actor generation, video, lip-sync)
+- **Google Gemini** or **OpenRouter API Key** — required for AI features (viral moment detection, titles, scripts)
+- **fal.ai API Key** ([Pay-per-use](https://fal.ai)) — required for AI Shorts only (actor generation, talking head, lip-sync)
 - **ElevenLabs API Key** ([Free tier](https://elevenlabs.io)) — required for voiceover/dubbing
-- **Upload-Post API Key** ([free tier](https://upload-post.com)) — required for direct social posting
+- **Upload-Post API Key** ([Free tier](https://upload-post.com)) — required for social media publishing
+
+> All API keys are optional depending on which features you use. The app runs without any — only the specific features that require each key will be unavailable.
 
 ---
 
@@ -231,13 +209,13 @@ Navigate to **`http://localhost:5175`**
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python 3.11, FastAPI, google-genai, faster-whisper, ultralytics (YOLOv8), mediapipe, opencv-python, yt-dlp, FFmpeg, httpx |
-| Frontend | React 18, Vite 4, Tailwind CSS 3.4 |
-| AI APIs | Google Gemini, fal.ai (Flux, Hailuo, VEED, Kling), ElevenLabs |
-| Infrastructure | Docker + Docker Compose, AWS S3 |
-| Publishing | Upload-Post API (TikTok, Instagram, YouTube) |
+| Layer          | Technology                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Backend        | Python 3.11, FastAPI, google-genai, faster-whisper, ultralytics (YOLOv8), mediapipe, opencv-python, yt-dlp, FFmpeg, httpx |
+| Frontend       | React 18, Vite 4, Tailwind CSS 3.4                                                                                        |
+| AI APIs        | Google Gemini, fal.ai (Flux, Hailuo, VEED, Kling), ElevenLabs                                                             |
+| Infrastructure | Docker + Docker Compose, AWS S3                                                                                           |
+| Publishing     | Upload-Post API (TikTok, Instagram, YouTube)                                                                              |
 
 ---
 
@@ -245,32 +223,48 @@ Navigate to **`http://localhost:5175`**
 
 **Server-side (.env):**
 | Variable | Description |
-|----------|------------|
+|---|---|
+| `LLM_PROVIDER` | LLM provider: `gemini` or `openrouter` (default: `openrouter`) |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
+| `OPENROUTER_BASE_URL` | OpenRouter base URL (default: https://openrouter.ai/api/v1) |
+| `OPENROUTER_MODEL` | OpenRouter model (default: google/gemini-2.0-flash-001) |
+| `GEMINI_API_KEY` | Google Gemini API key |
 | `AWS_ACCESS_KEY_ID` | AWS access key for S3 |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key |
 | `AWS_REGION` | AWS region (default: us-east-1) |
 | `AWS_S3_BUCKET` | Private bucket for clip backup |
 | `AWS_S3_PUBLIC_BUCKET` | Public bucket for gallery/avatars |
 | `MAX_CONCURRENT_JOBS` | Concurrent processing limit (default: 5) |
+| `YOUTUBE_COOKIES` | Netscape-format cookies to bypass YouTube bot detection |
 
-**Client-side (encrypted in localStorage):**
+**Client-side (stored in localStorage):**
 | Key | Description |
-|-----|------------|
-| `GEMINI_API_KEY` | Google Gemini — required |
-| `FAL_KEY` | fal.ai — required for AI Shorts |
-| `ELEVENLABS_API_KEY` | ElevenLabs — required for voiceover/dubbing |
-| `UPLOAD_POST_API_KEY` | Upload-Post — required, for social posting |
+|---|---|
+| `gemini_key` | LLM API key (Gemini or OpenRouter) |
+| `llm_provider` | Provider name: `gemini` or `openrouter` |
+| `llm_model` | Custom model override (optional) |
+| `fal_key` | fal.ai — for AI Shorts |
+| `elevenlabs_key` | ElevenLabs — for voiceover/dubbing |
+| `upload_post_key` | Upload-Post — for social posting |
 
 ---
 
-## Security & Performance
+## Security
 
 - **Non-Root Execution**: Containers run as dedicated `appuser`
-- **Concurrency Control**: Semaphore-based job queue (`MAX_CONCURRENT_JOBS`)
-- **Auto-Cleanup**: Automatic purging of old jobs (1h retention)
-- **Encrypted Keys**: API keys encrypted client-side, never stored server-side
-- **Upload Validation**: Image uploads validated for format and minimum size
-- **File Limits**: 2GB upload limit protection
+- **Path Traversal Protection**: All uploaded filenames sanitized with `os.path.basename()` + regex stripping
+- **FFmpeg Filter Sanitization**: AI-generated filter strings validated — dangerous patterns (`movie=`, backticks, pipes) blocked
+- **Content Ownership Acknowledgment**: Upload attestation logged with IP, user agent, and timestamp
+- **File Size Limits**: 2GB maximum per upload
+- **Image Format Validation**: Content-type check on actor image uploads (minimum 1KB)
+- **Webhook HMAC Signing**: Optional SHA-256 signatures for outbound webhooks
+- **CORS**: Restricted to origins defined in `ALLOWED_ORIGINS` env var
+- **Production Network Isolation**: Backend/renderer services on internal network, only frontend exposed externally
+- **Memory/CPU Limits**: Resource limits configured in production docker-compose
+- **API Key Auth**: Optional middleware (`API_AUTH_KEY` env var) protects `/api/` routes
+- **Secrets in .dockerignore**: `.env` files excluded from Docker build context
+
+> API keys are stored client-side in localStorage with base64 obfuscation — not encryption. Do not store sensitive keys. In production, deploy behind TLS.
 
 ---
 
@@ -286,7 +280,7 @@ Navigate to **`http://localhost:5175`**
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mutonby/shortlab&type=Date)](https://star-history.com/#mutonby/shortlab&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ElioNeto/shortlab&type=Date)](https://star-history.com/#ElioNeto/shortlab&Date)
 
 ## Contributions
 

@@ -32,6 +32,8 @@ from routers.analytics import router as analytics_router
 from routers.plugins import router as plugins_router
 from routers.abtesting import router as abtesting_router
 from routers.manual_editor import router as manual_editor_router
+from routers.batch import router as batch_router
+from routers.preview import router as preview_router
 
 from routers.state import OUTPUT_DIR, THUMBNAILS_DIR
 

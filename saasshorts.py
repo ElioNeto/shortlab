@@ -756,18 +756,6 @@ def generate_actor_images(
 
     return sorted(paths)
 
-    paths = []
-    for i, img in enumerate(result.get("images", [])):
-        img_path = os.path.join(output_dir, f"{title_slug}_actor_option_{i}.png")
-        with httpx.Client(timeout=60.0) as client:
-            img_resp = client.get(img["url"])
-            with open(img_path, "wb") as f:
-                f.write(img_resp.content)
-        paths.append(img_path)
-        print(f"[SaaSShorts] ✅ Actor option {i+1}: {img_path}")
-
-    return paths
-
 
 def generate_actor_image(
     description: str, fal_key: str, output_path: str
