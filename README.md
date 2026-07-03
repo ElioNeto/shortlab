@@ -1,6 +1,4 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/logo.png">
-  <source media="(prefers-color-scheme: light)" srcset="assets/logo-inverted.png">
   <img alt="ShortLab" src="assets/logo-inverted.png">
 </picture>
 
