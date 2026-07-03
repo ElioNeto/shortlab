@@ -1,0 +1,86 @@
+services:
+  backend:
+    build: .
+    container_name: shortlab-backend
+    expose:
+      - "8000"
+    volumes:
+      - ./output:/app/output
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+    env_file:
+      - .env
+    networks:
+      - shortlab-backend
+      - shortlab-frontend
+
+  frontend:
+    build: ./dashboard
+    container_name: shortlab-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+    environment:
+      - VITE_API_URL=http://backend:8000
+    networks:
+      - shortlab-frontend
+
+  renderer:
+    build:
+      context: .
+      dockerfile: render-service/Dockerfile
+    container_name: shortlab-renderer
+    expose:
+      - "3100"
+    volumes:
+      - ./output:/output
+    environment:
+      - REMOTION_BUNDLE_PATH=/app/remotion
+      - OUTPUT_DIR=/output
+      - PORT=3100
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+    networks:
+      - shortlab-backend
+
+networks:
+  shortlab-backend:
+    driver: bridge
+    internal: true  # Isolated - no external access
+  shortlab-frontend:
+    driver: bridge
