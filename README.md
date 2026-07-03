@@ -1,3 +1,9 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-inverted.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/logo.png">
+  <img alt="ShortLab" src="assets/logo.png">
+</picture>
+
 # ShortLab.app
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,8 +14,6 @@
 [![Last Commit](https://img.shields.io/github/last-commit/mutonby/shortlab)](https://github.com/mutonby/shortlab/commits/main)
 
 **Free & open source AI video platform** with 3 tools in one: **Clip Generator**, **AI Shorts (UGC videos with AI actors)**, and **YouTube Studio**. Self-hosted with Docker. No watermarks, no limits.
-
-https://github.com/user-attachments/assets/b45fa983-16b4-48b5-ac5b-a267836b9ad9
 
 
 
@@ -25,12 +29,8 @@ https://github.com/user-attachments/assets/b45fa983-16b4-48b5-ac5b-a267836b9ad9
 ### 1. Clip Generator
 Turn your long-form videos — podcasts, webinars, livestreams, vlogs, interviews — into viral-ready 9:16 shorts for TikTok, Instagram Reels, and YouTube Shorts.
 
-![Clip Results](screenshots/clip-results.png)
-
 ### 2. AI Shorts (UGC Video Creator)
 Generate marketing videos with AI actors for **any product or business**. No camera, no studio, no influencer budget. Just describe your product or paste a URL.
-
-![AI Shorts Setup](screenshots/ai-shorts.png)
 
 - **Two cost modes**: Low Cost (~$0.65/video) and Premium (~$2/video)
 - Works for any business: SaaS, restaurants, e-commerce, coaching, local businesses
@@ -41,8 +41,6 @@ Generate marketing videos with AI actors for **any product or business**. No cam
 ### 3. YouTube Studio
 Complete free AI YouTube toolkit: thumbnails, titles, descriptions, and direct publishing.
 
-![YouTube Studio](screenshots/youtube-studio.png)
-
 - AI thumbnail generator with face overlay
 - 10 viral title suggestions with refinement chat
 - Auto-generated descriptions with chapter timestamps
@@ -50,8 +48,6 @@ Complete free AI YouTube toolkit: thumbnails, titles, descriptions, and direct p
 
 ### UGC Video Gallery
 All generated videos and avatars are saved to a public gallery with SEO pages for each video.
-
-![UGC Gallery](screenshots/ugc-gallery.png)
 
 - Public gallery page with hover-to-play (`/gallery`)
 - Individual SEO video pages with og:video meta tags (`/video/{id}`)

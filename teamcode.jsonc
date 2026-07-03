@@ -86,7 +86,7 @@
         "bash": "allow",
         "task": "allow",
         "external_directory": "allow",
-        "question": "allow",
+        "question": "deny",
         "webfetch": "allow"
       }
     },
