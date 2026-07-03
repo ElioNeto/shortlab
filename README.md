@@ -100,18 +100,7 @@ All generated videos and avatars are saved to a public gallery with SEO pages fo
 - **Local businesses** — Restaurants, gyms, real estate, coaching — affordable video marketing
 - **Developers** — Self-host, customize the pipeline, integrate via API
 
----
 
-## AI Shorts Showcase
-
-Videos generated with ShortLab AI Shorts — no camera, no studio, no actors:
-
-|                                                                                                                                                          |                                                                                                                                                        |                                                                                                                                                                 |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| [![Biohacking for Investors](https://test-videos-upload-post.s3.eu-west-3.amazonaws.com/videos/cdceec1b/actor.png)](https://shortlab.app/video/cdceec1b) | [![Secret Weapon for Devs](https://test-videos-upload-post.s3.eu-west-3.amazonaws.com/videos/d3a80b6b/actor.png)](https://shortlab.app/video/d3a80b6b) | [![El Secreto de los Agentes de IA](https://test-videos-upload-post.s3.eu-west-3.amazonaws.com/videos/8ab7de92/actor.png)](https://shortlab.app/video/8ab7de92) |
-|                                                         **Biohacking for Investors** · LOW COST                                                          |                                                         **Secret Weapon for Devs** · LOW COST                                                          |                                                          **El Secreto de los Agentes de IA** · PREMIUM                                                          |
-
-> Browse all videos at [shortlab.app/gallery](https://shortlab.app/gallery)
 
 ---
 
