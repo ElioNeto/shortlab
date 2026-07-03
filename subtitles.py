@@ -1,5 +1,17 @@
 import os
+import re
 import subprocess
+
+# Singleton WhisperModel instance
+_whisper_model = None
+
+def _get_whisper_model():
+    """Lazy-load WhisperModel as a singleton to avoid reloading on every call."""
+    global _whisper_model
+    if _whisper_model is None:
+        from faster_whisper import WhisperModel
+        _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+    return _whisper_model
 
 
 def transcribe_audio(video_path):
@@ -7,12 +19,9 @@ def transcribe_audio(video_path):
     Transcribe audio from a video file using faster-whisper.
     Returns transcript in the same format as main.py for compatibility.
     """
-    from faster_whisper import WhisperModel
+    model = _get_whisper_model()
 
     print(f"🎙️  Transcribing audio from: {video_path}")
-
-    # Run on CPU with INT8 quantization for speed
-    model = WhisperModel("base", device="cpu", compute_type="int8")
 
     segments, info = model.transcribe(video_path, word_timestamps=True)
 
@@ -155,6 +164,11 @@ def burn_subtitles(video_path, srt_path, output_path, alignment=2, fontsize=16,
     - Outline mode (bg_opacity=0): Text with colored outline/border
     - Box mode (bg_opacity>0): Text with semi-transparent background box
     """
+    # Sanitize font_name to prevent FFmpeg filter injection
+    # Only allow alphanumeric characters, spaces, hyphens, and underscores
+    if not re.match(r'^[A-Za-z0-9\s\-_]+$', font_name):
+        font_name = "Verdana"
+    
     # Position mapping
     ass_alignment = 2
     align_lower = str(alignment).lower()

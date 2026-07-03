@@ -43,6 +43,11 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
+# Secrets
+.env
+.env.*
+*.env
+
 # Docs
 README.md
 *.md

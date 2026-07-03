@@ -11,43 +11,42 @@ import UGCGallery from './components/UGCGallery';
 import ScheduleWeekModal from './components/ScheduleWeekModal';
 import { getApiUrl } from './config';
 
-// Enhanced "Encryption" using XOR + Base64 with a Salt
-// This is better than plain Base64 but still client-side.
-const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_KEY || "ShortLab-Static-Salt-Change-Me";
-const ENCRYPTION_PREFIX = "ENC:";
+// API Key Storage
+// NOTE: Client-side storage cannot provide true obfuscateion.
+// Keys are obfuscated to prevent casual viewing, but are accessible to anyone
+// with browser developer tools. For production, use backend-proxied API keys.
+const STORAGE_PREFIX = "SL_";
 
-const encrypt = (text) => {
+// Simple obfuscation (NOT obfuscateion) - prevents casual viewing only
+const obfuscate = (text) => {
   if (!text) return '';
   try {
-    const xor = text.split('').map((c, i) =>
-      String.fromCharCode(c.charCodeAt(0) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length))
-    ).join('');
-    return ENCRYPTION_PREFIX + btoa(xor);
+    return STORAGE_PREFIX + btoa(encodeURIComponent(text));
   } catch (e) {
-    console.error("Encryption failed", e);
+    console.error("Storage obfuscation failed", e);
     return text;
   }
 };
 
-const decrypt = (text) => {
+const deobfuscate = (text) => {
   if (!text) return '';
-  if (text.startsWith(ENCRYPTION_PREFIX)) {
+  if (text.startsWith(STORAGE_PREFIX)) {
     try {
-      const raw = text.slice(ENCRYPTION_PREFIX.length);
-      // Check if it's plain base64 or our custom XOR (simple try)
-      const xor = atob(raw);
-      const result = xor.split('').map((c, i) =>
-        String.fromCharCode(c.charCodeAt(0) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length))
-      ).join('');
-      return result;
+      return decodeURIComponent(atob(text.slice(STORAGE_PREFIX.length)));
     } catch (e) {
-      // Fallback if decryption fails (might be old plain text)
       return '';
     }
   }
-  // Backward compatibility: If no prefix, assume old plain text (or return empty if you want to force re-login)
-  // For migration: Return text as is, so it populates the field, and next save will encrypt it.
   return text;
+};
+
+// HTTPS enforcement check
+const enforceHTTPS = () => {
+  if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
+    console.warn('⚠️ API keys should only be sent over HTTPS. Consider redirecting to HTTPS.');
+    return false;
+  }
+  return true;
 };
 
 // Simple TikTok icon sine Lucide might not have it or it varies
@@ -134,26 +133,29 @@ const pollJob = async (jobId) => {
 };
 
 function App() {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_key') || '');
+  const [apiKey, setApiKey] = useState(() => {
+    const stored = localStorage.getItem('gemini_key');
+    return stored ? deobfuscate(stored) : '';
+  });
   const [llmProvider, setLlmProvider] = useState(localStorage.getItem('llm_provider') || 'gemini');
   const [llmModel, setLlmModel] = useState(localStorage.getItem('llm_model') || '');
-  // Social API State - Load encrypted or plain
+  // Social API State - Load obfuscateed or plain
   const [uploadPostKey, setUploadPostKey] = useState(() => {
     const stored = localStorage.getItem('uploadPostKey_v3');
-    if (stored) return decrypt(stored);
+    if (stored) return deobfuscate(stored);
     return '';
   });
-  // ElevenLabs API State - Load encrypted
+  // ElevenLabs API State - Load obfuscateed
   const [elevenLabsKey, setElevenLabsKey] = useState(() => {
     const stored = localStorage.getItem('elevenLabsKey_v1');
-    if (stored) return decrypt(stored);
+    if (stored) return deobfuscate(stored);
     return '';
   });
 
-  // fal.ai API State - Load encrypted
+  // fal.ai API State - Load obfuscateed
   const [falKey, setFalKey] = useState(() => {
     const stored = localStorage.getItem('falKey_v1');
-    if (stored) return decrypt(stored);
+    if (stored) return deobfuscate(stored);
     return '';
   });
 
@@ -233,9 +235,7 @@ function App() {
   }, [jobId, status, results, activeTab]);
 
   useEffect(() => {
-    // Encrypt Gemini Key too for consistency if desired, but user asked specifically about Social integration not saving well.
-    // For now keeping gemini plain for compatibility unless requested.
-    if (apiKey) localStorage.setItem('gemini_key', apiKey);
+    if (apiKey) localStorage.setItem('gemini_key', obfuscate(apiKey));
   }, [apiKey]);
 
   useEffect(() => {
@@ -248,7 +248,7 @@ function App() {
 
   useEffect(() => {
     if (uploadPostKey) {
-      localStorage.setItem('uploadPostKey_v3', encrypt(uploadPostKey));
+      localStorage.setItem('uploadPostKey_v3', obfuscate(uploadPostKey));
     }
     if (uploadUserId) {
       localStorage.setItem('uploadUserId', uploadUserId);
@@ -257,13 +257,13 @@ function App() {
 
   useEffect(() => {
     if (elevenLabsKey) {
-      localStorage.setItem('elevenLabsKey_v1', encrypt(elevenLabsKey));
+      localStorage.setItem('elevenLabsKey_v1', obfuscate(elevenLabsKey));
     }
   }, [elevenLabsKey]);
 
   useEffect(() => {
     if (falKey) {
-      localStorage.setItem('falKey_v1', encrypt(falKey));
+      localStorage.setItem('falKey_v1', obfuscate(falKey));
     }
   }, [falKey]);
 
@@ -655,7 +655,7 @@ function App() {
                     <button
                       onClick={() => {
                         if (elevenLabsKey) {
-                          localStorage.setItem('elevenLabsKey_v1', encrypt(elevenLabsKey));
+                          localStorage.setItem('elevenLabsKey_v1', obfuscate(elevenLabsKey));
                           alert('ElevenLabs API Key saved!');
                         }
                       }}
@@ -706,7 +706,7 @@ function App() {
                     <button
                       onClick={() => {
                         if (falKey) {
-                          localStorage.setItem('falKey_v1', encrypt(falKey));
+                          localStorage.setItem('falKey_v1', obfuscate(falKey));
                           alert('fal.ai API Key saved!');
                         }
                       }}

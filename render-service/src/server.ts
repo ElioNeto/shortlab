@@ -1,10 +1,12 @@
 import express from "express";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { initBundle } from "./bundle.js";
 import { executeRender } from "./render-worker.js";
 
-// --- Render status types ---
+// --- render status types ---
 
 export type RenderStatus = "queued" | "rendering" | "done" | "error";
 
@@ -16,22 +18,35 @@ export interface RenderJob {
   progress: number;
   outputUrl?: string;
   error?: string;
+  createdAt: number;
 }
 
-// In-memory render job map
+// In-memory render job map with TTL cleanup
 export const renderJobs = new Map<string, RenderJob>();
+const RENDER_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+// Periodic cleanup of expired renders
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, job] of renderJobs.entries()) {
+    if (now - job.createdAt > RENDER_TTL_MS) {
+      renderJobs.delete(id);
+      console.log(`[render] Cleaned up expired render ${id}`);
+    }
+  }
+}, 5 * 60 * 1000); // Check every 5 minutes
 
 // --- Request validation schema ---
 
 const renderRequestSchema = z.object({
-  jobId: z.string().min(1),
-  clipIndex: z.number().int().min(0),
+  jobId: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/),
+  clipIndex: z.number().int().min(0).max(100),
   props: z.object({
-    videoUrl: z.string(),
-    durationInFrames: z.number().int().positive(),
-    fps: z.number().positive(),
-    width: z.number().int().positive(),
-    height: z.number().int().positive(),
+    videoUrl: z.string().url().max(2048),
+    durationInFrames: z.number().int().positive().max(18000),
+    fps: z.number().positive().max(120),
+    width: z.number().int().positive().max(4096),
+    height: z.number().int().positive().max(4096),
     subtitles: z.any().nullable().optional(),
     hook: z.any().nullable().optional(),
     effects: z.any().nullable().optional(),
@@ -41,13 +56,33 @@ const renderRequestSchema = z.object({
 // --- Express app ---
 
 const app = express();
+
+// CORS configuration
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:5173", "http://localhost:5175"];
+app.use(cors({
+  origin: ALLOWED_ORIGINS,
+  credentials: true,
+}));
+
 app.use(express.json({ limit: "10mb" }));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { error: "Too many requests, please try again later." },
+});
+app.use(limiter);
 
 const PORT = parseInt(process.env.PORT || "3100", 10);
 const OUTPUT_DIR = process.env.OUTPUT_DIR || "/output";
 
 // Serve video files from the shared output volume so Remotion can access them via HTTP
-app.use("/output", express.static(OUTPUT_DIR));
+// Path traversal protection: express.static handles this safely by default
+app.use("/output", express.static(OUTPUT_DIR, {
+  dotfiles: 'ignore',
+  maxAge: '1d',
+}));
 
 // Health check
 app.get("/health", (_req, res) => {
@@ -75,6 +110,7 @@ app.post("/render", (req, res) => {
     clipIndex,
     status: "queued",
     progress: 0,
+    createdAt: Date.now(),
   };
 
   renderJobs.set(renderId, job);

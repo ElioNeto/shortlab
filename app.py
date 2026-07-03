@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 import subprocess
 import threading
@@ -37,8 +38,14 @@ job_queue = asyncio.Queue()
 jobs: Dict[str, Dict] = {}
 thumbnail_sessions: Dict[str, Dict] = {}
 publish_jobs: Dict[str, Dict] = {}  # {publish_id: {status, result, error}}
+saas_jobs: Dict[str, Dict] = {}  # SaaSShorts job state
 # Semester to limit concurrency to MAX_CONCURRENT_JOBS
 concurrency_semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
+
+# Maximum state limits to prevent DoS
+MAX_JOBS = 1000
+MAX_THUMBNAIL_SESSIONS = 100
+MAX_SAAS_JOBS = 500
 
 def _relocate_root_job_artifacts(job_id: str, job_output_dir: str) -> bool:
     """
@@ -82,8 +89,7 @@ def _relocate_root_job_artifacts(job_id: str, job_output_dir: str) -> bool:
         return False
 
 async def cleanup_jobs():
-    """Background task to remove old jobs and files."""
-    import time
+    """Background task to remove old jobs and files with TTL and capacity limits."""
     print("🧹 Cleanup task started.")
     while True:
         try:
@@ -101,19 +107,41 @@ async def cleanup_jobs():
                         if job_id in jobs:
                             del jobs[job_id]
 
-            # Cleanup SaaSShorts jobs from memory
-            try:
-                saas_expired = [
-                    jid for jid, jdata in list(saas_jobs.items())
-                    if jdata.get("status") in ("completed", "failed")
-                    and jdata.get("output_dir")
-                    and os.path.isdir(jdata["output_dir"])
-                    and now - os.path.getmtime(jdata["output_dir"]) > JOB_RETENTION_SECONDS
-                ]
-                for jid in saas_expired:
+            # Enforce capacity limits
+            if len(jobs) > MAX_JOBS:
+                oldest = sorted(jobs.keys(), key=lambda k: jobs[k].get("created_at", 0))[:len(jobs) - MAX_JOBS]
+                for jid in oldest:
+                    del jobs[jid]
+
+            # Cleanup SaaSShorts jobs
+            saas_expired = [
+                jid for jid, jdata in list(saas_jobs.items())
+                if jdata.get("status") in ("completed", "failed")
+                and jdata.get("output_dir")
+                and os.path.isdir(jdata["output_dir"])
+                and now - os.path.getmtime(jdata["output_dir"]) > JOB_RETENTION_SECONDS
+            ]
+            for jid in saas_expired:
+                del saas_jobs[jid]
+
+            # Enforce saas_jobs capacity limit
+            if len(saas_jobs) > MAX_SAAS_JOBS:
+                oldest = sorted(saas_jobs.keys(), key=lambda k: saas_jobs[k].get("created_at", 0))[:len(saas_jobs) - MAX_SAAS_JOBS]
+                for jid in oldest:
                     del saas_jobs[jid]
-            except NameError:
-                pass
+
+            # Cleanup thumbnail sessions
+            expired_sessions = [
+                sid for sid, sdata in list(thumbnail_sessions.items())
+                if now - sdata.get("created_at", 0) > JOB_RETENTION_SECONDS
+            ]
+            for sid in expired_sessions:
+                del thumbnail_sessions[sid]
+
+            if len(thumbnail_sessions) > MAX_THUMBNAIL_SESSIONS:
+                oldest = sorted(thumbnail_sessions.keys(), key=lambda k: thumbnail_sessions[k].get("created_at", 0))[:len(thumbnail_sessions) - MAX_THUMBNAIL_SESSIONS]
+                for sid in oldest:
+                    del thumbnail_sessions[sid]
 
             # Cleanup Uploads
             for filename in os.listdir(UPLOAD_DIR):
@@ -169,10 +197,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Enable CORS for frontend
+# Enable CORS for frontend - restricted to specific origins
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5175").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -274,7 +303,7 @@ async def run_job(job_id, job_data):
             jobs[job_id]['logs'].append("Process finished successfully.")
             
             # Start S3 upload in background (silent, non-blocking)
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             loop.run_in_executor(None, upload_job_artifacts, output_dir, job_id)
             
             # Find result JSON
@@ -375,8 +404,11 @@ async def process_endpoint(
     if url:
         cmd.extend(["-u", url])
     else:
-        # Save uploaded file with size limit check
-        input_path = os.path.join(UPLOAD_DIR, f"{job_id}_{file.filename}")
+        # Sanitize filename to prevent path traversal
+        safe_filename = os.path.basename(file.filename) if file.filename else "upload"
+        # Remove any characters that could be used for path traversal
+        safe_filename = re.sub(r'[/\\]', '_', safe_filename)
+        input_path = os.path.join(UPLOAD_DIR, f"{job_id}_{safe_filename}")
 
         # Read file in chunks to check size
         size = 0
@@ -404,7 +436,8 @@ async def process_endpoint(
         'cmd': cmd,
         'env': env,
         'output_dir': job_output_dir,
-        'attestation': attestation
+        'attestation': attestation,
+        'created_at': time.time()
     }
 
     await job_queue.put(job_id)
@@ -472,7 +505,7 @@ async def edit_clip(
             input_path = os.path.join(OUTPUT_DIR, req.job_id, filename)
         
         if not os.path.exists(input_path):
-             raise HTTPException(status_code=404, detail=f"Video file not found: {input_path}")
+             raise HTTPException(status_code=404, detail=f"Video file not found")
 
         # Define output path for edited video
         edited_filename = f"edited_{filename}"
@@ -540,7 +573,7 @@ async def edit_clip(
                     os.remove(safe_input_path)
 
         # Run in thread pool
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         plan = await loop.run_in_executor(None, run_edit)
         
         # Update clip URL in the job result? 
@@ -690,7 +723,7 @@ async def generate_effects_config(
             input_path = os.path.join(OUTPUT_DIR, req.job_id, filename)
 
         if not os.path.exists(input_path):
-            raise HTTPException(status_code=404, detail=f"Video file not found: {input_path}")
+            raise HTTPException(status_code=404, detail=f"Video file not found")
 
         def run_effects_generation():
             editor = VideoEditor(api_key=final_api_key, provider=provider, model=model)
@@ -751,7 +784,7 @@ async def generate_effects_config(
                 if os.path.exists(safe_input_path):
                     os.remove(safe_input_path)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         effects_config = await loop.run_in_executor(None, run_effects_generation)
 
         if effects_config is None:
@@ -809,7 +842,7 @@ async def add_subtitles(req: SubtitleRequest):
     if not os.path.exists(input_path):
         # Try looking for edited version if url implied it?
         # Just fail if not found.
-        raise HTTPException(status_code=404, detail=f"Video file not found: {input_path}")
+        raise HTTPException(status_code=404, detail=f"Video file not found")
         
     # Define outputs
     srt_filename = f"subs_{req.clip_index}_{int(time.time())}.srt"
@@ -830,7 +863,7 @@ async def add_subtitles(req: SubtitleRequest):
             def run_transcribe_srt():
                 return generate_srt_from_video(input_path, srt_path)
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             success = await loop.run_in_executor(None, run_transcribe_srt)
         else:
             success = generate_srt(transcript, clip_data['start'], clip_data['end'], srt_path)
@@ -847,7 +880,7 @@ async def add_subtitles(req: SubtitleRequest):
                            border_color=req.border_color, border_width=req.border_width,
                            bg_color=req.bg_color, bg_opacity=req.bg_opacity)
         
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, run_burn)
         
     except Exception as e:
@@ -919,7 +952,7 @@ async def add_hook(req: HookRequest):
          
     input_path = os.path.join(output_dir, filename)
     if not os.path.exists(input_path):
-        raise HTTPException(status_code=404, detail=f"Video file not found: {input_path}")
+        raise HTTPException(status_code=404, detail=f"Video file not found")
         
     # Output video
     output_filename = f"hook_{filename}"
@@ -934,7 +967,7 @@ async def add_hook(req: HookRequest):
         def run_hook():
              add_hook_to_video(input_path, req.text, output_path, position=req.position, font_scale=font_scale)
         
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, run_hook)
         
     except Exception as e:
@@ -1013,7 +1046,7 @@ async def translate_clip(
 
     input_path = os.path.join(output_dir, filename)
     if not os.path.exists(input_path):
-        raise HTTPException(status_code=404, detail=f"Video file not found: {input_path}")
+        raise HTTPException(status_code=404, detail=f"Video file not found")
 
     # Output video with language suffix
     base, ext = os.path.splitext(filename)
@@ -1031,7 +1064,7 @@ async def translate_clip(
                 source_language=req.source_language,
             )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, run_translate)
 
     except Exception as e:
@@ -1255,12 +1288,12 @@ async def thumbnail_upload(
             # Download YouTube video if URL was provided
             if not vpath and url:
                 from main import download_youtube_video
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
                 vpath, _ = await loop.run_in_executor(None, download_youtube_video, url, UPLOAD_DIR)
                 thumbnail_sessions[session_id]["video_path"] = vpath
 
             from main import transcribe_video
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             transcript = await loop.run_in_executor(None, transcribe_video, vpath)
             segments = transcript.get("segments", [])
             duration = segments[-1]["end"] if segments else 0
@@ -1341,7 +1374,7 @@ async def thumbnail_analyze(
 
     try:
         # Run analysis in thread pool (skips Whisper if pre_transcript is available)
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, analyze_video_for_titles, api_key, video_path, pre_transcript, provider, model)
 
         # Store/update session context
@@ -1416,7 +1449,7 @@ async def thumbnail_titles(
     session["conversation"].append({"role": "user", "content": req.message})
 
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             refine_titles,
@@ -1486,7 +1519,7 @@ async def thumbnail_generate(
             video_context = thumbnail_sessions[session_id].get("context", "")
 
         # Run generation in thread pool
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         thumbnails = await loop.run_in_executor(
             None,
             generate_thumbnail,
@@ -1542,7 +1575,7 @@ async def thumbnail_describe(
         raise HTTPException(status_code=400, detail="No transcript segments available. Please analyze a video first.")
 
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             generate_youtube_description,
@@ -1729,7 +1762,7 @@ async def saasshorts_analyze(
         raise HTTPException(status_code=400, detail="Provide a URL or a product description")
 
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         def run_analysis():
             web_research = None
@@ -2151,6 +2184,7 @@ async def saasshorts_generate(
                 "logs": [f"Retrying job {job_id[:8]}... reusing cached assets from disk."],
                 "result": None,
                 "output_dir": job_output_dir,
+                "created_at": time.time(),
             }
 
     if not reused:
@@ -2162,6 +2196,7 @@ async def saasshorts_generate(
             "logs": ["SaaSShorts job started."],
             "result": None,
             "output_dir": job_output_dir,
+            "created_at": time.time(),
         }
 
     # If user selected a pre-generated actor, resolve it to a local path
@@ -2285,7 +2320,7 @@ async def saasshorts_voices(
     """List available ElevenLabs voices."""
     if x_elevenlabs_key:
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             voices = await loop.run_in_executor(
                 None, get_elevenlabs_voices, x_elevenlabs_key
             )

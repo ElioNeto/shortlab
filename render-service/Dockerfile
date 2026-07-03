@@ -5,6 +5,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends chromium ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /bin/sh appuser
+
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV REMOTION_BUNDLE_PATH=/app/remotion
 ENV OUTPUT_DIR=/output
@@ -30,5 +33,11 @@ RUN cd /app/remotion && npm install
 # Build TypeScript
 RUN npm run build
 
+# Create output directory and set permissions
+RUN mkdir -p /output && chown -R appuser:appuser /output /app
+
 EXPOSE 3100
+
+USER appuser
+
 CMD ["node", "dist/server.js"]

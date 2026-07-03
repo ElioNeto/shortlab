@@ -101,7 +101,7 @@ class VideoEditor:
             response_mime_type="application/json",
         )
 
-        print(f"🔍 DEBUG: LLM Raw Response:\n{response_text}")
+        # LLM response processed (debug logging removed for production)
 
         try:
             from llm import parse_json_response
@@ -174,7 +174,7 @@ class VideoEditor:
             response_mime_type="application/json",
         )
 
-        print(f"🔍 DEBUG: LLM Raw Response:\n{response_text}")
+        # LLM response processed (debug logging removed for production)
 
         try:
             from llm import parse_json_response
@@ -216,11 +216,29 @@ class VideoEditor:
     @staticmethod
     def _sanitize_filter_string(filter_string: str) -> str:
         """
-        Best-effort sanitizer for Gemini-generated FFmpeg expressions.
+        Comprehensive sanitizer for Gemini-generated FFmpeg expressions.
         Converts comparison operators (t<3, on>=75, etc.) into FFmpeg expr functions (lt(), gte(), ...),
         which are far more reliably parsed across FFmpeg builds.
+        Also blocks dangerous filter operations that could read/write files.
         """
         s = filter_string
+
+        # Block dangerous filter operations that could access files or execute commands
+        dangerous_patterns = [
+            r'\bmovie\s*=',      # movie source filter (can read external files)
+            r'\bamovie\s*=',     # audio movie source
+            r'\balib\s*=',       # alib filter
+            r'\bconcat\s*=',     # concat with external sources
+            r'\boverlay\s*=.*:', # overlay with external file paths
+            r'`',                # backticks (shell execution)
+            r'\$\(.*\)',         # command substitution
+            r';',                # semicolons (command separator)
+            r'\|',               # pipes
+        ]
+        for pattern in dangerous_patterns:
+            if re.search(pattern, s, re.IGNORECASE):
+                print(f"⚠️ Blocked dangerous filter pattern: {pattern}")
+                s = re.sub(pattern, '', s, flags=re.IGNORECASE)
 
         # Order matters: handle >= / <= before > / <
         patterns: list[tuple[re.Pattern[str], str]] = [

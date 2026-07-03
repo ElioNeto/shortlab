@@ -6,6 +6,20 @@ import HookModal from './HookModal';
 import TranslateModal from './TranslateModal';
 import { renderInBrowser } from '../lib/renderInBrowser';
 
+// Simple deobfuscation (matches App.jsx)
+const STORAGE_PREFIX = "SL_";
+const deobfuscate = (text) => {
+  if (!text) return '';
+  if (text.startsWith(STORAGE_PREFIX)) {
+    try {
+      return decodeURIComponent(atob(text.slice(STORAGE_PREFIX.length)));
+    } catch (e) {
+      return '';
+    }
+  }
+  return text;
+};
+
 export default function ResultCard({ clip, index, jobId, uploadPostKey, uploadUserId, geminiApiKey, elevenLabsKey, llmProvider, llmModel, onPlay, onPause }) {
     const [showModal, setShowModal] = useState(false);
     const [showSubtitleModal, setShowSubtitleModal] = useState(false);
@@ -65,7 +79,7 @@ export default function ResultCard({ clip, index, jobId, uploadPostKey, uploadUs
         setIsEditing(true);
         setEditError(null);
         try {
-            const apiKey = geminiApiKey || localStorage.getItem('gemini_key');
+            const apiKey = geminiApiKey || deobfuscate(localStorage.getItem('gemini_key'));
 
             if (!apiKey) {
                 throw new Error("Gemini API Key is missing. Please set it in Settings.");
