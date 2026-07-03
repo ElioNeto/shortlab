@@ -10,8 +10,8 @@
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![GitHub stars](https://img.shields.io/github/stars/mutonby/shortlab?style=social)](https://github.com/mutonby/shortlab)
-[![Last Commit](https://img.shields.io/github/last-commit/mutonby/shortlab)](https://github.com/mutonby/shortlab/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/ElioNeto/shortlab?style=social)](https://github.com/ElioNeto/shortlab)
+[![Last Commit](https://img.shields.io/github/last-commit/ElioNeto/shortlab)](https://github.com/ElioNeto/shortlab/commits/main)
 
 **Free & open source AI video platform** with 3 tools in one: **Clip Generator**, **AI Shorts (UGC videos with AI actors)**, and **YouTube Studio**. Self-hosted with Docker. No watermarks, no limits.
 
@@ -276,7 +276,7 @@ Navigate to **`http://localhost:5175`**
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mutonby/shortlab&type=Date)](https://star-history.com/#mutonby/shortlab&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ElioNeto/shortlab&type=Date)](https://star-history.com/#ElioNeto/shortlab&Date)
 
 ## Contributions
 
