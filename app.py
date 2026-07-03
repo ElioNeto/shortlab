@@ -31,6 +31,7 @@ from routers.templates import router as templates_router
 from routers.analytics import router as analytics_router
 from routers.plugins import router as plugins_router
 from routers.abtesting import router as abtesting_router
+from routers.manual_editor import router as manual_editor_router
 
 from routers.state import OUTPUT_DIR, THUMBNAILS_DIR
 
@@ -73,7 +74,7 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_tags=[
         {"name": "Processing", "description": "Video processing and clip generation"},
-        {"name": "Editing", "description": "Subtitles, hooks, effects, translation"},
+        {"name": "Editing", "description": "Subtitles, hooks, effects, translation, manual editing, PiP, split screen"},
         {"name": "Thumbnails", "description": "AI thumbnail and title generation"},
         {"name": "Social", "description": "Social media publishing"},
         {"name": "AI Shorts", "description": "AI UGC video generation"},
@@ -127,5 +128,6 @@ app.include_router(templates_router)
 app.include_router(analytics_router)
 app.include_router(plugins_router)
 app.include_router(abtesting_router)
+app.include_router(manual_editor_router)
 app.include_router(batch_router)
 app.include_router(preview_router)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileVideo, Sparkles, Youtube, Instagram, Share2, LogOut, ChevronDown, Check, Activity, LayoutDashboard, Settings, PlusCircle, History, Menu, X, Terminal, Shield, LayoutGrid, Image, Globe, RotateCcw, Calendar, AlertTriangle, KeyRound, Bot, Users, Smartphone, ExternalLink, Copy, CheckCircle2, Sun, Moon } from 'lucide-react';
+import { Upload, FileVideo, Sparkles, Youtube, Instagram, Share2, LogOut, ChevronDown, Check, Activity, LayoutDashboard, Settings, PlusCircle, History, Menu, X, Terminal, Shield, LayoutGrid, Image, Globe, RotateCcw, Calendar, AlertTriangle, KeyRound, Bot, Users, Smartphone, ExternalLink, Copy, CheckCircle2, Sun, Moon, Scissors } from 'lucide-react';
 import KeyInput from './components/KeyInput';
 import MediaInput from './components/MediaInput';
 import ResultCard from './components/ResultCard';
@@ -7,6 +7,7 @@ import ProcessingAnimation from './components/ProcessingAnimation';
 import ThumbnailStudio from './components/ThumbnailStudio';
 import SaaShortsTab from './components/SaaShortsTab';
 import UGCGallery from './components/UGCGallery';
+import VideoEditor from './components/VideoEditor';
 import ScheduleWeekModal from './components/ScheduleWeekModal';
 import { getApiUrl } from './config';
 import { useTheme } from './ThemeContext';
@@ -174,6 +175,7 @@ function App() {
 
   const [sessionRecovered, setSessionRecovered] = useState(false);
   const [showScheduleWeek, setShowScheduleWeek] = useState(false);
+  const [showVideoEditor, setShowVideoEditor] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   // Sync state for original video playback
@@ -993,7 +995,31 @@ function App() {
                       Programar Semana
                     </button>
                   )}
+                  {results?.clips?.length > 0 && status === 'complete' && (
+                    <button
+                      onClick={() => setShowVideoEditor(!showVideoEditor)}
+                      className={`ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        showVideoEditor ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+                      }`}
+                    >
+                      <Scissors size={14} />
+                      {showVideoEditor ? 'Close Editor' : 'Edit Clips'}
+                    </button>
+                  )}
                 </h2>
+
+                {showVideoEditor && results?.clips?.length > 0 && (
+                  <div className="mb-4 p-4 bg-white/5 rounded-xl border border-white/5 animate-[fadeIn_0.3s_ease-out]">
+                    <VideoEditor clips={results.clips} jobId={jobId} onUpdate={(data) => {
+                      if (data.path) {
+                        setResults({
+                          ...results,
+                          clips: [...results.clips, { video_url: data.path, ...data }],
+                        });
+                      }
+                    }} />
+                  </div>
+                )}
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
                   {results && results.clips && results.clips.length > 0 ? (
