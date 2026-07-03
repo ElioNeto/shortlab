@@ -6,7 +6,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![GitHub stars](https://img.shields.io/github/stars/ElioNeto/shortlab?style=social)](https://github.com/ElioNeto/shortlab)
 [![Last Commit](https://img.shields.io/github/last-commit/ElioNeto/shortlab)](https://github.com/ElioNeto/shortlab/commits/main)
@@ -127,17 +126,17 @@ All generated videos and avatars are saved to a public gallery with SEO pages fo
 
 ## How Much Does It Cost?
 
-ShortLab is free. You only pay for the AI APIs you use — and most have generous free tiers:
+ShortLab is free. You only pay for the AI APIs you use — most have free tiers:
 
-| Service           | Free Tier                                                  | Paid Cost                | Used For                                                |
-| ----------------- | ---------------------------------------------------------- | ------------------------ | ------------------------------------------------------- |
-| **Google Gemini** | Free trial with generous limits                            | < $0.01 per 10-min video | Viral moment detection, script generation, web research |
-| **fal.ai**        | Pay-per-use                                                | ~$0.50-1.50 per AI Short | Actor generation, talking head video, lip-sync          |
-| **ElevenLabs**    | Free tier available                                        | Pay-per-use              | Voiceover, voice dubbing                                |
-| **Upload-Post**   | **10 free uploads/month** to all networks (no credit card) | Pay-per-use              | Auto-publishing to TikTok, Instagram, YouTube           |
-| **AWS S3**        | Optional                                                   | ~$0.023/GB               | Cloud backup for clips and gallery                      |
+| Service | Free Tier | Paid Cost | Used For |
+|---|---|---|---|
+| **Gemini / OpenRouter** | Free tier with generous limits | ~$0.01 per 10-min video | Viral moment detection, scripts, titles |
+| **fal.ai** | Pay-per-use | ~$0.50–1.50 per AI Short | Actor, talking head, b-roll |
+| **ElevenLabs** | Free tier available | Pay-per-use | Voiceover, dubbing |
+| **Upload-Post** | 10 free uploads/month | Pay-per-use | Social posting |
+| **AWS S3** | Optional | ~$0.023/GB | Cloud backup |
 
-**Bottom line:** You can clip videos for practically free with Gemini, and publish 10 videos/month to all social networks at zero cost with Upload-Post.
+**Bottom line:** Clip videos for practically free with Gemini/OpenRouter, and publish up to 10 videos/month to all social networks at zero cost with Upload-Post.
 
 ---
 
@@ -223,33 +222,49 @@ Navigate to **`http://localhost:5175`**
 ## Environment Variables
 
 **Server-side (.env):**
-| Variable                | Description                              |
-| ----------------------- | ---------------------------------------- |
-| `AWS_ACCESS_KEY_ID`     | AWS access key for S3                    |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key                           |
-| `AWS_REGION`            | AWS region (default: us-east-1)          |
-| `AWS_S3_BUCKET`         | Private bucket for clip backup           |
-| `AWS_S3_PUBLIC_BUCKET`  | Public bucket for gallery/avatars        |
-| `MAX_CONCURRENT_JOBS`   | Concurrent processing limit (default: 5) |
+| Variable | Description |
+|---|---|
+| `LLM_PROVIDER` | LLM provider: `gemini` or `openrouter` (default: `openrouter`) |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
+| `OPENROUTER_BASE_URL` | OpenRouter base URL (default: https://openrouter.ai/api/v1) |
+| `OPENROUTER_MODEL` | OpenRouter model (default: google/gemini-2.0-flash-001) |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key |
+| `AWS_REGION` | AWS region (default: us-east-1) |
+| `AWS_S3_BUCKET` | Private bucket for clip backup |
+| `AWS_S3_PUBLIC_BUCKET` | Public bucket for gallery/avatars |
+| `MAX_CONCURRENT_JOBS` | Concurrent processing limit (default: 5) |
+| `YOUTUBE_COOKIES` | Netscape-format cookies to bypass YouTube bot detection |
 
-**Client-side (encrypted in localStorage):**
-| Key                   | Description                                 |
-| --------------------- | ------------------------------------------- |
-| `GEMINI_API_KEY`      | Google Gemini — required                    |
-| `FAL_KEY`             | fal.ai — required for AI Shorts             |
-| `ELEVENLABS_API_KEY`  | ElevenLabs — required for voiceover/dubbing |
-| `UPLOAD_POST_API_KEY` | Upload-Post — required, for social posting  |
+**Client-side (stored in localStorage):**
+| Key | Description |
+|---|---|
+| `gemini_key` | LLM API key (Gemini or OpenRouter) |
+| `llm_provider` | Provider name: `gemini` or `openrouter` |
+| `llm_model` | Custom model override (optional) |
+| `fal_key` | fal.ai — for AI Shorts |
+| `elevenlabs_key` | ElevenLabs — for voiceover/dubbing |
+| `upload_post_key` | Upload-Post — for social posting |
 
 ---
 
-## Security & Performance
+## Security
 
 - **Non-Root Execution**: Containers run as dedicated `appuser`
-- **Concurrency Control**: Semaphore-based job queue (`MAX_CONCURRENT_JOBS`)
-- **Auto-Cleanup**: Automatic purging of old jobs (1h retention)
-- **Encrypted Keys**: API keys encrypted client-side, never stored server-side
-- **Upload Validation**: Image uploads validated for format and minimum size
-- **File Limits**: 2GB upload limit protection
+- **Path Traversal Protection**: All uploaded filenames sanitized with `os.path.basename()` + regex stripping
+- **FFmpeg Filter Sanitization**: AI-generated filter strings validated — dangerous patterns (`movie=`, backticks, pipes) blocked
+- **Content Ownership Acknowledgment**: Upload attestation logged with IP, user agent, and timestamp
+- **File Size Limits**: 2GB maximum per upload
+- **Image Format Validation**: Content-type check on actor image uploads (minimum 1KB)
+- **Webhook HMAC Signing**: Optional SHA-256 signatures for outbound webhooks
+- **CORS**: Restricted to origins defined in `ALLOWED_ORIGINS` env var
+- **Production Network Isolation**: Backend/renderer services on internal network, only frontend exposed externally
+- **Memory/CPU Limits**: Resource limits configured in production docker-compose
+- **API Key Auth**: Optional middleware (`API_AUTH_KEY` env var) protects `/api/` routes
+- **Secrets in .dockerignore**: `.env` files excluded from Docker build context
+
+> API keys are stored client-side in localStorage with base64 obfuscation — not encryption. Do not store sensitive keys. In production, deploy behind TLS.
 
 ---
 
