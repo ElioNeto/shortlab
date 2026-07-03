@@ -1,0 +1,147 @@
+{
+  "$schema": "https://raw.githubusercontent.com/ElioNeto/teamcode/main/schemas/teamcode.json",
+  "default_agent": "build",
+  "instructions": [
+    "CLAUDE.md"
+  ],
+  "command": {
+    "dev": {
+      "description": "Start all dev services (backend + frontend + renderer)",
+      "template": "docker compose up --build",
+      "subtask": true
+    },
+    "dev:backend": {
+      "description": "Start backend API server only",
+      "template": "uvicorn app:app --reload --host 0.0.0.0 --port 8000",
+      "subtask": true
+    },
+    "dev:frontend": {
+      "description": "Start frontend dev server only",
+      "template": "npm run dev",
+      "agent": "frontend"
+    },
+    "test": {
+      "description": "Run all tests",
+      "template": "python -m pytest tests/ -v",
+      "subtask": true
+    },
+    "test:e2e": {
+      "description": "Run E2E Playwright tests",
+      "template": "cd e2e && npx playwright test",
+      "agent": "test"
+    },
+    "test:backend": {
+      "description": "Run backend tests only",
+      "template": "python -m pytest tests/ -v --ignore=e2e",
+      "subtask": true
+    },
+    "lint": {
+      "description": "Lint Python backend code",
+      "template": "ruff check . --exclude=node_modules,dashboard,remotion,render-service --fix && ruff format . --check --exclude=node_modules,dashboard,remotion,render-service"
+    },
+    "lint:frontend": {
+      "description": "Lint frontend code",
+      "template": "cd dashboard && npx eslint src --ext .jsx,.js --max-warnings 50"
+    },
+    "typecheck": {
+      "description": "Run Python type checking",
+      "template": "mypy app.py routers/ --ignore-missing-imports --exclude=node_modules"
+    },
+    "ci": {
+      "description": "Run full CI pipeline locally (lint + test + build)",
+      "template": "echo 'Running CI locally...' && python -m pytest tests/ -v && ruff check . --exclude=node_modules,dashboard,remotion,render-service"
+    },
+    "db": {
+      "description": "Install/update Python dependencies",
+      "template": "pip install -r requirements.txt && pip install -r requirements-dev.txt"
+    },
+    "clean": {
+      "description": "Clean generated files and caches",
+      "template": "rm -rf output/* uploads/* __pycache__ .pytest_cache .ruff_cache"
+    },
+    "build:frontend": {
+      "description": "Build frontend for production",
+      "template": "cd dashboard && npm run build",
+      "agent": "frontend"
+    },
+    "docker:prod": {
+      "description": "Start production Docker stack",
+      "template": "docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d"
+    },
+    "docs": {
+      "description": "Start API documentation server",
+      "template": "echo 'Open http://localhost:8000/docs in your browser - FastAPI auto-generates OpenAPI docs'",
+      "agent": "backend"
+    }
+  },
+  "agent": {
+    "build": {
+      "description": "Default agent - full-stack development for ShortLab video platform"
+    },
+    "backend": {
+      "description": "Backend specialist - Python/FastAPI APIs, FFmpeg pipelines, AI integration",
+      "prompt": "You are a backend specialist for ShortLab, an AI-powered video generator. Focus on: FastAPI routes, video processing (FFmpeg), LLM integration (Gemini), subtitle generation, S3 storage. Keep app.py lean - new features go in routers/. Use app_logger for logging.",
+      "permission": {
+        "bash": {
+          "uvicorn *": "allow",
+          "python *": "allow",
+          "pip *": "allow",
+          "ffmpeg *": "allow",
+          "*": "ask"
+        }
+      }
+    },
+    "frontend": {
+      "description": "Frontend specialist - React/Vite dashboard UI",
+      "prompt": "You are a frontend specialist for ShortLab. Use React 18, Tailwind CSS, lucide-react icons. Follow the existing dark theme patterns (bg-surface, bg-white/5, text-zinc-400). Access API via getApiUrl() from config. New components go in dashboard/src/components/. Maintain i18n translations in dashboard/src/i18n.js.",
+      "permission": {
+        "bash": {
+          "npm *": "allow",
+          "npx *": "allow",
+          "node *": "allow",
+          "*": "ask"
+        }
+      }
+    },
+    "video-editor": {
+      "description": "Video editing specialist - FFmpeg pipelines, filters, composition",
+      "prompt": "You are a video processing specialist for ShortLab. Work with FFmpeg filters, subtitle burning, hook overlays, PiP, split screen. Python modules: editor.py, hooks.py, subtitles.py, routers/manual_editor.py. Always validate AI-generated filter strings with _sanitize_filter_string before execution."
+    },
+    "test": {
+      "description": "Testing specialist - pytest and Playwright E2E tests"
+    },
+    "security": {
+      "description": "Security auditor - dependency scanning, code review, pentest",
+      "hidden": true
+    }
+  },
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git *": "allow",
+      "gh *": "allow",
+      "docker *": "allow",
+      "docker-compose *": "allow",
+      "python *": "allow",
+      "pip *": "allow",
+      "npm *": "allow",
+      "npx *": "allow",
+      "uvicorn *": "allow",
+      "pytest *": "allow",
+      "ruff *": "allow",
+      "mypy *": "allow",
+      "ls *": "allow",
+      "mkdir *": "allow",
+      "cp *": "allow",
+      "mv *": "allow",
+      "cat *": "allow",
+      "sleep *": "allow",
+      "which *": "allow",
+      "*": "ask"
+    },
+    "external_directory": {
+      "/tmp/teamcode": "allow",
+      "*": "ask"
+    }
+  }
+}
