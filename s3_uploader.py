@@ -131,8 +131,6 @@ def list_all_clips(bucket_name=None, limit=50, force_refresh=False):
         limit: Maximum number of clips to return (default 50 for speed)
         force_refresh: If True, bypass cache
     """
-    global _clips_cache
-    
     # Check cache first (thread-safe)
     with _cache_lock:
         now = time_module.time()
@@ -409,8 +407,6 @@ def list_video_gallery(limit=50, force_refresh=False):
     List all UGC videos from the public S3 bucket.
     Returns list of metadata dicts, newest first.
     """
-    global _video_gallery_cache
-
     now = time_module.time()
     if not force_refresh and _video_gallery_cache["data"] is not None:
         if now - _video_gallery_cache["timestamp"] < CACHE_TTL_SECONDS:

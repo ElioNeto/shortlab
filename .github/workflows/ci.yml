@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Lint
-        run: npx eslint src --ext .jsx,.js --max-warnings 50 || true
+        run: npx eslint src --max-warnings 50 || true
 
   docker-build:
     runs-on: ubuntu-latest
