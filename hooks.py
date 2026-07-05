@@ -182,7 +182,7 @@ def add_hook_to_video(video_path, text, output_path, position="top", font_scale=
     # 1. Probe video width to scale text properly
     try:
         cmd = ['ffprobe', '-v', 'error', '-show_entries', 'stream=width,height', '-of', 'csv=s=x:p=0', video_path]
-        res = subprocess.check_output(cmd).decode().strip()
+        res = subprocess.check_output(cmd, timeout=60).decode().strip()
         # Takes first stream if multiple
         dims = res.split('\n')[0].split('x')
         video_width = int(dims[0])
@@ -227,7 +227,7 @@ def add_hook_to_video(video_path, text, output_path, position="top", font_scale=
             output_path
         ]
         
-        subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
         print(f"✅ Hook added to {output_path}")
         return True
         

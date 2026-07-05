@@ -9,6 +9,9 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 import httpx
 
+from app_logger import logger
+from routers.state import limiter
+
 router = APIRouter(prefix="/api/webhooks", tags=["Webhooks"])
 
 # In-memory webhook registrations
@@ -29,6 +32,7 @@ class WebhookEvent(BaseModel):
 
 
 @router.post("/register")
+@limiter.limit("5/minute")
 async def register_webhook(webhook: WebhookRegistration):
     if not webhook.url.startswith("https://"):
         raise HTTPException(status_code=400, detail="Webhook URL must use HTTPS")
@@ -58,4 +62,4 @@ async def dispatch_webhooks(event: str, job_id: str, data: dict):
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     await client.post(wh.url, json=payload.dict(), headers=headers)
             except Exception as e:
-                print(f"[Webhook] Failed to dispatch to {wh.url}: {e}")
+                logger.error(f"Failed to dispatch webhook to {wh.url}: {e}")

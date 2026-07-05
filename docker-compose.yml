@@ -8,7 +8,7 @@ services:
       - ./output:/app/output
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,7 +20,10 @@ services:
           cpus: '2'
 
   frontend:
-    build: ./dashboard
+    build:
+      context: ./dashboard
+      args:
+        VITE_API_URL: http://localhost:8000
     container_name: shortlab-frontend
     ports:
       - "5175:80"

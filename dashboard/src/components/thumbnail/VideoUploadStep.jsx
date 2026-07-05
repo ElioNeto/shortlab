@@ -104,7 +104,7 @@ export default function VideoUploadStep({
         <DragDropZone
           label="Upload video file"
           accept="video/*"
-          onFile={(f) => { onVideoFileChange(f); onVideoClear(); }}
+          onFile={onVideoFileChange}
           file={videoFile}
           onClear={onVideoClear}
           icon={Video}

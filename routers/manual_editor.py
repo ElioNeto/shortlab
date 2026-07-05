@@ -61,7 +61,7 @@ async def trim_video(req: TrimRequest):
         output_path
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
         logger.error(f"Trim failed: {result.stderr}")
         raise HTTPException(status_code=500, detail=f"Trim failed: {result.stderr[:200]}")
@@ -96,7 +96,7 @@ async def concat_videos(req: ConcatRequest):
         output_path
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     os.remove(concat_file)
 
     if result.returncode != 0:
@@ -148,7 +148,7 @@ async def picture_in_picture(req: PipRequest):
         output_path
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
         logger.error(f"PiP failed: {result.stderr}")
         raise HTTPException(status_code=500, detail=f"PiP failed: {result.stderr[:200]}")
@@ -186,7 +186,7 @@ async def split_screen(req: SplitScreenRequest):
         output_path
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
         logger.error(f"Split screen failed: {result.stderr}")
         raise HTTPException(status_code=500, detail=f"Split screen failed: {result.stderr[:200]}")

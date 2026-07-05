@@ -35,6 +35,13 @@ dashboard/node_modules/
 *.gif
 videos/
 
+# App data (mounted via volumes in compose)
+uploads/
+output/
+
+# Build artifacts
+dashboard/dist/
+
 # Model files (downloaded at build time)
 *.pt
 

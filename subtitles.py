@@ -233,7 +233,7 @@ def burn_subtitles(video_path, srt_path, output_path, alignment=2, fontsize=16,
     ]
 
     print(f"🎬 Burning subtitles: {' '.join(cmd)}")
-    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
 
     if result.returncode != 0:
         logger.error(f"FFmpeg Subtitle Error: {result.stderr.decode()}")

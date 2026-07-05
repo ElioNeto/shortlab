@@ -258,8 +258,8 @@ async def saasshorts_voices(
             )
             if voices:
                 return {"voices": voices, "source": "elevenlabs"}
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to fetch ElevenLabs voices, using defaults: {e}")
 
     return {
         "voices": [
@@ -414,8 +414,8 @@ async def saasshorts_generate(
                         with open(actor_local, "wb") as f:
                             f.write(resp.content)
                         selected_actor_path = actor_local
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to download selected actor image: {e}")
         else:
             src = os.path.join(OUTPUT_DIR, req.selected_actor_url.replace("/videos/", ""))
             if os.path.exists(src):

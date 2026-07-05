@@ -231,7 +231,7 @@ async def generate_effects_config(
                     '-of', 'json',
                     safe_input_path
                 ]
-                probe_result = subprocess.check_output(probe_cmd).decode().strip()
+                probe_result = subprocess.check_output(probe_cmd, timeout=60).decode().strip()
                 probe_data = json.loads(probe_result)
 
                 stream = probe_data.get('streams', [{}])[0]

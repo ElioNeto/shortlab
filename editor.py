@@ -259,7 +259,7 @@ class VideoEditor:
         
         if not filter_data or "filter_string" not in filter_data:
             logger.warning("No filter string found. Copying original.")
-            subprocess.run(['ffmpeg', '-y', '-i', input_path, '-c', 'copy', output_path])
+            subprocess.run(['ffmpeg', '-y', '-i', input_path, '-c', 'copy', output_path], timeout=300)
             return
 
         filter_string = filter_data["filter_string"]
@@ -267,7 +267,7 @@ class VideoEditor:
         # Get input dimensions so we can enforce geometry (avoid broken aspect ratios).
         try:
             probe_cmd = ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=s=x:p=0', input_path]
-            res_out = subprocess.check_output(probe_cmd, env={**os.environ, "LANG": "C.UTF-8"}).decode().strip()
+            res_out = subprocess.check_output(probe_cmd, env={**os.environ, "LANG": "C.UTF-8"}, timeout=60).decode().strip()
             w, h = map(int, res_out.split('x'))
         except Exception as e:
             print(f"⚠️ Could not probe resolution: {e}")
@@ -325,7 +325,7 @@ class VideoEditor:
                 else:
                     cmd_bytes.append(arg)
             
-            subprocess.run(cmd_bytes, check=True, env=env)
+            subprocess.run(cmd_bytes, check=True, env=env, timeout=300)
         except subprocess.CalledProcessError as e:
             print(f"❌ FFmpeg failed: {e}")
             raise e

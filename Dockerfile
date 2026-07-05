@@ -21,7 +21,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install FFmpeg, OpenCV dependencies, and Node.js (for yt-dlp JS challenges)
+# Install FFmpeg, OpenCV dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libgl1 \
@@ -29,13 +29,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsm6 \
     libxext6 \
     libxrender1 \
-    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual env from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
+
+# Use /tmp for writable caches (avoid issues with mounted volumes)
+ENV MPLCONFIGDIR=/tmp/matplotlib
+ENV HF_HOME=/tmp/huggingface
+ENV XDG_CACHE_HOME=/tmp/cache
+ENV FONTCONFIG_CACHE=/tmp/fontconfig
 
 # Always upgrade yt-dlp to latest (YouTube bot-detection changes frequently)
 RUN pip install --upgrade --no-cache-dir yt-dlp
@@ -47,9 +52,9 @@ COPY . .
 RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
 
 # Create directories including Ultralytics cache config
-RUN mkdir -p /app/uploads /app/output /tmp/Ultralytics
+RUN mkdir -p /app/uploads /app/output /tmp/Ultralytics /tmp/matplotlib /tmp/huggingface /tmp/cache /tmp/fontconfig
 # Fix permissions: /app for code/uploads, /tmp/Ultralytics for AI cache
-RUN chown -R appuser:appuser /app /tmp/Ultralytics
+RUN chown -R appuser:appuser /app /tmp/Ultralytics /tmp/matplotlib /tmp/huggingface /tmp/cache /tmp/fontconfig
 
 # Switch to non-root user
 USER appuser

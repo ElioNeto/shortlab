@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app_logger import logger
+from routers.state import limiter
 
 router = APIRouter(prefix="/api/abtest", tags=["Thumbnails"])
 
@@ -36,6 +37,7 @@ async def create_abtest(test: ABTestCreate):
     return {"test_id": test_id, "variants": len(test.variants)}
 
 @router.post("/vote")
+@limiter.limit("30/minute")
 async def vote_abtest(vote: ABTestVote):
     path = os.path.join(ABTEST_DIR, f"{vote.test_id}.json")
     if not os.path.exists(path):

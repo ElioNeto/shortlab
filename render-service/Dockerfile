@@ -34,7 +34,7 @@ RUN cd /app/remotion && npm install
 RUN npm run build
 
 # Create output directory and set permissions
-RUN mkdir -p /output && chown -R appuser:appuser /output /app
+RUN mkdir -p /output && chown -R appuser:appuser /output && chown appuser:appuser /app
 
 EXPOSE 3100
 

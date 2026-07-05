@@ -37,6 +37,7 @@ from routers.state import (
     thumbnail_sessions,
     saas_jobs,
     THUMBNAILS_DIR,
+    limiter,
 )
 
 load_dotenv()
@@ -94,7 +95,8 @@ def _relocate_root_job_artifacts(job_id: str, job_output_dir: str) -> bool:
                 shutil.move(clip_path, dest_clip)
 
         return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Could not relocate root job artifacts for {job_id}: {e}")
         return False
 
 
@@ -158,8 +160,8 @@ async def cleanup_jobs():
                 try:
                     if now - os.path.getmtime(file_path) > JOB_RETENTION_SECONDS:
                         os.remove(file_path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Failed to remove old upload {file_path}: {e}")
 
         except Exception as e:
             logger.warning(f"Cleanup error: {e}")
@@ -231,8 +233,8 @@ async def run_job(job_id, job_data):
 
                         if ready_clips:
                             jobs[job_id]['result'] = {'clips': ready_clips, 'cost_analysis': cost_analysis}
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to check partial results for job {job_id}: {e}")
 
         returncode = process.returncode
 
@@ -322,6 +324,7 @@ async def get_config():
 
 
 @router.post("/api/process")
+@limiter.limit("10/minute")
 async def process_endpoint(
     request: Request,
     file: Optional[UploadFile] = File(None),

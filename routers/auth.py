@@ -7,6 +7,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
 
+from routers.state import limiter
+
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 # JWT configuration
@@ -15,9 +17,16 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
 # Simple in-memory user store (for self-hosted, single-user mode)
+_default_password = os.environ.get("ADMIN_PASSWORD")
+if not _default_password:
+    import secrets
+    _default_password = secrets.token_urlsafe(12)
+    print(f"⚠️  No ADMIN_PASSWORD set. Generated temporary password: {_default_password}")
+    print(f"   Set ADMIN_PASSWORD env var to use a persistent password.")
+
 USERS = {
     "admin": {
-        "password": os.environ.get("ADMIN_PASSWORD", "admin"),
+        "password": _default_password,
         "role": "admin",
     }
 }
@@ -48,6 +57,7 @@ def create_token(username: str) -> str:
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(req: LoginRequest):
     if req.username not in USERS:
         raise HTTPException(status_code=401, detail="Invalid credentials")

@@ -43,7 +43,7 @@ async def preview_clip(req: PreviewRequest):
         output_path
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=f"Preview generation failed: {result.stderr}")
 

@@ -2,6 +2,7 @@ import os
 import threading
 import logging
 from dotenv import load_dotenv
+from app_logger import logger
 
 load_dotenv()
 import boto3
@@ -40,7 +41,8 @@ def upload_file_to_s3(file_path, bucket_name, s3_key):
         return True
     except ClientError:
         return False
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to upload {file_path} to S3: {e}")
         return False
 
 
@@ -84,9 +86,9 @@ def _batch_get_objects(s3_client, bucket, keys, max_workers=10):
             try:
                 resp = future.result()
                 results[key] = json.loads(resp["Body"].read().decode("utf-8"))
-            except Exception:
+            except Exception as e:
                 # Individual failures are logged but don't block other keys
-                pass
+                logger.warning(f"Failed to fetch S3 key {key}: {e}")
     return results
 
 def get_s3_client():

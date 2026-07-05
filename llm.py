@@ -15,10 +15,9 @@ import os
 import re
 import json
 import time
-import logging
 from typing import Optional
 
-logger = logging.getLogger(__name__)
+from app_logger import logger
 
 # Default models per provider
 DEFAULT_MODELS = {
@@ -29,8 +28,8 @@ DEFAULT_MODELS = {
 # Fallback models for OpenRouter when primary fails
 FALLBACK_MODELS = {
     "openrouter": [
-        "meta-llama/llama-3.3-70b-instruct:free",
         "google/gemma-4-31b-it:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
     ],
     "gemini": [
@@ -107,8 +106,8 @@ def retry_with_backoff(func, max_retries=MAX_RETRIES, base_delay=RETRY_BASE_DELA
                         match = re.search(r"'retry_after_seconds':\s*(\d+\.?\d*)", str(e))
                         if match:
                             retry_after = float(match.group(1))
-                    except:
-                        pass
+                    except Exception:
+                        logger.debug("Failed to parse retry_after_seconds from error response")
                 
                 if retry_after:
                     delay = min(retry_after + 1, max_delay)
@@ -366,7 +365,7 @@ class LLMClient:
                     if chunk.web:
                         sources.append({"title": chunk.web.title, "url": chunk.web.uri})
         except Exception:
-            pass
+            logger.debug("No grounding metadata available in Gemini response")
 
         return response.text, sources
 
@@ -399,7 +398,7 @@ class LLMClient:
                     "output_tokens": usage.candidates_token_count,
                 }
         except Exception:
-            pass
+            logger.debug("Could not extract usage metadata from Gemini response")
         return None
 
     # ── OpenRouter (OpenAI-compatible) implementation ──────────────────

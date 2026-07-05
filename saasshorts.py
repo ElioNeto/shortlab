@@ -20,6 +20,8 @@ import subprocess
 import httpx
 from typing import Optional
 
+from app_logger import logger
+
 # Prompt injection sanitization patterns
 PROMPT_INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions|prompts|directions)",
@@ -142,6 +144,7 @@ Be thorough. Use REAL data from your search results, not made-up information."""
     try:
         research = parse_json_response(response_text)
     except Exception:
+        logger.warning("Failed to parse web research JSON response, using raw text fallback")
         research = {"raw_research": response_text, "product_name": domain}
 
     research["grounding_sources"] = sources
@@ -184,6 +187,7 @@ Return a JSON research report:
     try:
         research = parse_json_response(response_text)
     except Exception:
+        logger.warning("Failed to parse fallback research JSON response, using raw text")
         research = {"raw_research": response_text, "product_name": domain}
 
     research["grounding_sources"] = []
@@ -247,8 +251,8 @@ def scrape_website(url: str) -> dict:
                 full_host = httpx.URL(full_url).host
                 if base_host and full_host and base_host == full_host:
                     subpages.add(full_url)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to parse subpage URL {a['href']}: {e}")
 
     # Scrape subpages (max 3)
     additional = ""
@@ -1021,7 +1025,7 @@ def generate_broll(
         output_path,
     ]
 
-    subprocess.run(cmd, check=True, capture_output=True)
+    subprocess.run(cmd, check=True, capture_output=True, timeout=300)
 
     # Cleanup temp image
     if os.path.exists(img_path):
@@ -1044,7 +1048,7 @@ def _get_media_duration(path: str) -> float:
         path,
     ]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         output = result.stdout.strip()
         if output:
             return float(output)
@@ -1206,7 +1210,7 @@ def composite_video(
             "-c:a", "aac", "-b:a", "128k",
             output_path,
         ]
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True, timeout=300)
         print(f"[SaaSShorts] ✅ Final video (simple): {output_path}")
         return output_path
 
@@ -1297,7 +1301,7 @@ def composite_video(
         output_path,
     ]
 
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, timeout=300)
     print(f"[SaaSShorts] ✅ Final video (composite): {output_path}")
     return output_path
 

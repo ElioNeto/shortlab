@@ -10,7 +10,10 @@ import os
 import asyncio
 from typing import Dict, List
 from fastapi import WebSocket
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
+from app_logger import logger
 from routers.queue import job_queue
 
 # ── Directory constants ──────────────────────────────────────────────
@@ -74,10 +77,14 @@ class ConnectionManager:
             for ws in self.active_connections[job_id]:
                 try:
                     await ws.send_json(message)
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"WebSocket send failed for job {job_id}: {e}")
                     disconnected.append(ws)
             for ws in disconnected:
                 self.active_connections[job_id].remove(ws)
 
 
 manager = ConnectionManager()
+
+# ── Rate Limiting ────────────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)

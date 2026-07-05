@@ -17,6 +17,7 @@ import mediapipe as mp
 # import whisper (replaced by faster_whisper inside function)
 from dotenv import load_dotenv
 import json
+from app_logger import logger
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module='google.protobuf')
@@ -634,6 +635,7 @@ def process_video_to_vertical(input_video, final_output_video):
     Core logic to convert horizontal video to vertical using scene detection and Active Speaker Tracking (MediaPipe).
     """
     script_start_time = time.time()
+    original_input = input_video
     
     # Define temporary file paths based on the output name
     base_name = os.path.splitext(final_output_video)[0]
@@ -655,6 +657,31 @@ def process_video_to_vertical(input_video, final_output_video):
     except ValueError as e:
         print(f"   ❌ Invalid video file: {e}")
         raise
+    
+    print("   Step 1a: Checking video codec...")
+    codec_check = subprocess.run(
+        ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=codec_name', '-of', 'default=noprint_wrappers=1:nokey=1', input_video],
+        capture_output=True, text=True, timeout=30
+    )
+    video_codec = codec_check.stdout.strip().lower()
+    
+    if video_codec not in ('h264', 'avc1', 'libx264'):
+        converted_path = f"{os.path.splitext(input_video)[0]}_h264.mp4"
+        print(f"   ⚠️ Video codec is '{video_codec}' (not H.264). Converting to H.264 for compatibility...")
+        convert_cmd = [
+            'ffmpeg', '-y', '-i', input_video,
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+            '-c:a', 'copy', '-movflags', '+faststart',
+            converted_path
+        ]
+        try:
+            subprocess.run(convert_cmd, check=True, capture_output=True, timeout=600)
+            print(f"   ✅ Converted to H.264: {converted_path}")
+            input_video = converted_path
+        except subprocess.CalledProcessError as e:
+            print(f"   ⚠️ Conversion failed, proceeding with original: {e.stderr.decode()[:200]}")
+    else:
+        print(f"   ✅ Codec is H.264 ({video_codec}), no conversion needed.")
     
     print("   Step 1: Detecting scenes...")
     scenes, fps = detect_scenes(input_video)
@@ -777,10 +804,10 @@ def process_video_to_vertical(input_video, final_output_video):
 
     print("\n   🔊 Step 5: Extracting audio...")
     audio_extract_command = [
-        'ffmpeg', '-y', '-i', input_video, '-vn', '-acodec', 'copy', temp_audio_output
+        'ffmpeg', '-y', '-i', input_video, '-vn', '-c:a', 'aac', '-b:a', '128k', temp_audio_output
     ]
     try:
-        subprocess.run(audio_extract_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        subprocess.run(audio_extract_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
     except subprocess.CalledProcessError:
         print("\n   ❌ Audio extraction failed (maybe no audio?). Proceeding without audio.")
         pass
@@ -798,7 +825,7 @@ def process_video_to_vertical(input_video, final_output_video):
         ]
         
     try:
-        subprocess.run(merge_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        subprocess.run(merge_command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=300)
         print(f"   ✅ Clip saved to {final_output_video}")
     except subprocess.CalledProcessError as e:
         print("\n   ❌ Final merge failed.")
@@ -808,6 +835,9 @@ def process_video_to_vertical(input_video, final_output_video):
     # Clean up temp files
     if os.path.exists(temp_video_output): os.remove(temp_video_output)
     if os.path.exists(temp_audio_output): os.remove(temp_audio_output)
+    if input_video != original_input and os.path.exists(input_video):
+        os.remove(input_video)
+        print("   🗑️  Cleaned up temporary converted video")
     
     return True
 
@@ -910,8 +940,8 @@ def transcribe_video(video_path):
                 
                 try:
                     os.remove(chunk_file)
-                except:
-                    pass
+                except Exception:
+                    logger.warning(f"Failed to remove chunk file: {chunk_file}")
             
             if not detected_language:
                 detected_language = info.language
@@ -964,8 +994,8 @@ def transcribe_video(video_path):
     # Clean up progress file
     try:
         os.remove(PROGRESS_FILE)
-    except:
-        pass
+    except Exception:
+        logger.warning(f"Failed to remove progress file: {PROGRESS_FILE}")
     
     # Save complete transcript cache
     transcript_result = {
@@ -1062,8 +1092,10 @@ def get_viral_clips(transcript_result, video_duration, llm_client=None):
         )
 
     try:
-        response_text = llm_client.generate_text(prompt=prompt)
-
+        response_text = llm_client.generate_text(
+            prompt=prompt,
+            response_mime_type="application/json",
+        )
         result_json = parse_json_response(response_text)
         return result_json
     except Exception as e:
@@ -1183,7 +1215,7 @@ if __name__ == '__main__':
                     '-c:a', 'aac',
                     clip_temp_path
                 ]
-                subprocess.run(cut_command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                subprocess.run(cut_command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
                 
                 # Process vertical
                 success = process_video_to_vertical(clip_temp_path, clip_final_path)

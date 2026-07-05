@@ -4,22 +4,27 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - .:/app
+    environment:
+      - MPLCONFIGDIR=/tmp/matplotlib
+      - HF_HOME=/tmp/huggingface
+      - XDG_CACHE_HOME=/tmp/cache
+      - FONTCONFIG_CACHE=/tmp/fontconfig
     networks:
-      shortlab-backend:
-        internal: false
+      - shortlab-backend
 
   frontend:
     ports:
-      - "127.0.0.1:5175:80"
+      - "127.0.0.1:5177:80"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=
+    networks:
+      - shortlab-backend
 
   renderer:
     ports:
       - "127.0.0.1:3100:3100"
     networks:
-      shortlab-backend:
-        internal: false
+      - shortlab-backend
 
 networks:
   shortlab-backend:

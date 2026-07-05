@@ -13,8 +13,7 @@ from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
@@ -35,7 +34,7 @@ from routers.manual_editor import router as manual_editor_router
 from routers.batch import router as batch_router
 from routers.preview import router as preview_router
 
-from routers.state import OUTPUT_DIR, THUMBNAILS_DIR
+from routers.state import OUTPUT_DIR, THUMBNAILS_DIR, limiter
 
 load_dotenv()
 
@@ -54,7 +53,7 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None)):
 
 
 # ── Rate Limiting ────────────────────────────────────────────────────
-limiter = Limiter(key_func=get_remote_address)
+# limiter is defined in routers.state and imported above
 
 
 # ── Lifespan (start background workers) ──────────────────────────────
@@ -63,7 +62,11 @@ async def lifespan(app: FastAPI):
     worker_task = asyncio.create_task(process_queue())
     cleanup_task = asyncio.create_task(cleanup_jobs())
     yield
-    # Cleanup would go here if needed
+    # Graceful shutdown: cancel background tasks
+    worker_task.cancel()
+    cleanup_task.cancel()
+    await asyncio.gather(worker_task, cleanup_task, return_exceptions=True)
+    app_logger.info("Background tasks cancelled.")
 
 
 # ── Application ──────────────────────────────────────────────────────
@@ -88,7 +91,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS — restricted to specific origins ────────────────────────────
-ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5175").split(",")
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5175,http://localhost:5176,http://localhost:5177").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
