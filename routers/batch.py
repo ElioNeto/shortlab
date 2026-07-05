@@ -47,14 +47,17 @@ async def batch_process(
         os.makedirs(job_output_dir, exist_ok=True)
 
         cmd = ["python", "main.py", "-i", input_path, "-o", job_output_dir]
+
+        job_env = {}
         if api_key:
-            cmd.extend(["--api-key", api_key])
+            job_env["GEMINI_API_KEY"] = api_key
+            job_env["OPENROUTER_API_KEY"] = api_key
 
         jobs[job_id] = {
             "status": "queued",
             "logs": [f"Batch {batch_id}: {file.filename}"],
             "cmd": cmd,
-            "env": {},
+            "env": job_env,
             "output_dir": job_output_dir,
             "batch_id": batch_id,
         }
