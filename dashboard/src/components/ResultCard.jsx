@@ -533,18 +533,29 @@ const ResultCard = React.memo(function ResultCard({ clip, index, jobId, uploadPo
                         onClick={async (e) => {
                             e.preventDefault();
                             try {
-                                const response = await fetch(currentVideoUrl);
-                                if (!response.ok) throw new Error('Download failed');
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.style.display = 'none';
-                                a.href = url;
-                                a.download = `clip-${index + 1}.mp4`;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
+                                if (currentVideoUrl.startsWith('blob:')) {
+                                    // Blob URL from Remotion — download directly
+                                    const a = document.createElement('a');
+                                    a.href = currentVideoUrl;
+                                    a.download = `clip-${index + 1}.mp4`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                } else {
+                                    // Server URL — fetch and download
+                                    const response = await fetch(currentVideoUrl);
+                                    if (!response.ok) throw new Error('Download failed');
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = url;
+                                    a.download = `clip-${index + 1}.mp4`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                }
                             } catch (err) {
                                 console.error('Download error:', err);
                                 window.open(currentVideoUrl, '_blank');
